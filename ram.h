@@ -5,6 +5,7 @@
 #include "structs.h"
 #include <stdbool.h>
 
+
 LinhaCache* criaRAM_vazia(int tamanho);
 LinhaCache* criaRAM_aleatoria(int tamanho);
 void liberaRAM(LinhaCache* ram);

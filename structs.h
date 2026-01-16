@@ -6,6 +6,7 @@
 
 
 typedef struct {
+    
     char *texto;
     int ativo;
     int flagBotao;    // 0 = Checkbox, 1 = Botão

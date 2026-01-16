@@ -1,6 +1,7 @@
 #include "structs.h"
 #include "cpu.h"
 #include "ram.h"
+
 #include "MMU.h"
 
 void cpu(Instrucao *programa, long int relogio) {

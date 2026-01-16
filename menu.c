@@ -68,6 +68,7 @@ void desenhar_structs(int highlight, ConfigItem *itens, int n_itens, char *titul
     getmaxyx(stdscr
         , max_y, max_x);
     erase();
+    
     box(stdscr, 0, 0);
     mvprintw(1, (max_x - strlen(titulo)) / 2, "%s", titulo);
 

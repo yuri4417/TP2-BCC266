@@ -53,6 +53,7 @@ int buscarCache(Cache* c, int endRAM, long int relogioAtual) {
             return i;
         }
     }
+    
 
     
     c->miss++;

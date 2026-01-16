@@ -5,6 +5,7 @@
 #include "structs.h"
 
 
+
 void menu_init();
 void menu_close();
 int menu_run(char *opcoes[], int n_opcoes, char *titulo);

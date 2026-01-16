@@ -27,6 +27,7 @@ int main() {
 
     // INICIALIZAR RELOGIO EM ALGUM LUGAR
 
+
     
     menu_init();
     int rodando = 1;

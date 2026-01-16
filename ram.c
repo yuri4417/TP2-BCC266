@@ -6,6 +6,7 @@
 
 LinhaCache* criaRAM_vazia(int tamanho) {
     LinhaCache *ptr = (LinhaCache*) malloc(sizeof(LinhaCache) * tamanho);
+    
     if (ptr) {
         for (int i = 0; i < tamanho; i++) {
 

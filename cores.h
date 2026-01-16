@@ -40,6 +40,7 @@
 	#define BG_MAGENTA(string) ANSI_BG_COLOR_MAGENTA string ANSI_RESET
 	#define BG_CYAN(string)    ANSI_BG_COLOR_CYAN    string ANSI_RESET
 	#define BG_WHITE(string)   ANSI_BG_COLOR_WHITE   string ANSI_RESET
+
 	
 	
 	// caracteres uteis para tabelas

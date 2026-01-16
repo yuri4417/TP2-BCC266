@@ -6,4 +6,5 @@ void cpu(Instrucao *programa, long int relogio);
 
 
 
+
 #endif
