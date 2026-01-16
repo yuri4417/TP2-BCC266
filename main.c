@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <time.h>
+
 #include "menu.h"
 #include "structs.h"
 
@@ -15,6 +17,7 @@ void tela_opcoes_avancadas() {
 }
 
 int main() {
+    srand(time(NULL));
     char *opcoes_principal[] = {
         "Iniciar Benchmark",
         "Configuracoes",
@@ -22,11 +25,13 @@ int main() {
         "Sair"
     };
 
+    // INICIALIZAR RELOGIO EM ALGUM LUGAR
 
+    
     menu_init();
     int rodando = 1;
     while(rodando) {
-        int escolha = menu_run(opcoes_principal, 4, "CacheBenchmark - v0.1");
+        int escolha = menu_run(opcoes_principal, 4, "CacheBenchmark™- v0.5");
 
         switch(escolha) {
             case 1: //Iniciar Benchmark
@@ -48,6 +53,6 @@ int main() {
     }
 
     menu_close();
-    printf("Sistema encerrado.\n");
+    
     return 0;
 }

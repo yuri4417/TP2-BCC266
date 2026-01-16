@@ -1,3 +1,4 @@
+
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
@@ -10,6 +11,7 @@ typedef struct {
     int flagBotao;    // 0 = Checkbox, 1 = Botão
 } ConfigItem;
 
+
 typedef struct {
     int palavras[4];
     int endBloco;
@@ -17,7 +19,6 @@ typedef struct {
     int prioridade;
     bool preenchido;
 
-    // bool alterado;
     // int cacheHit;
 } LinhaCache;
 
@@ -31,13 +32,15 @@ typedef struct {
 
 
 typedef struct {
+    int endBloco;
+    int endPalavra;
+} Endereco;
+
+typedef struct {
     int opcode;
-    int add1_bloco;
-    int add1_palavra;
-    int add2_bloco;
-    int add2_palavra;
-    int add3_bloco;
-    int add3_palavra;
+    Endereco add1;
+    Endereco add2;
+    Endereco add3;
 } Instrucao;
 
 #endif

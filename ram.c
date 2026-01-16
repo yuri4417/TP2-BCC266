@@ -3,30 +3,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-Bloco* criaRAM_vazia(int tamanho) {
-    Bloco *ptr = (Bloco*) malloc(sizeof(Bloco));
+
+LinhaCache* criaRAM_vazia(int tamanho) {
+    LinhaCache *ptr = (LinhaCache*) malloc(sizeof(LinhaCache) * tamanho);
     if (ptr) {
         for (int i = 0; i < tamanho; i++) {
-            ptr[i].endBloco = i;
-            ptr[i].alterado = false;
-            ptr[i].custo = 0;
-            ptr[i].cacheHit = 0;
+
             for (int j = 0; j < 4; j++)
                 ptr[i].palavras[j] = 0;
+            ptr[i].endBloco = i;
         }
     }
     return ptr;
 }
 
 
-Bloco* criaRAM_aleatoria(int tamanho) {
-    Bloco *ptr = (Bloco*) malloc(sizeof(Bloco));
+LinhaCache* criaRAM_aleatoria(int tamanho) {
+    LinhaCache *ptr = (LinhaCache*) malloc(sizeof(LinhaCache));
     if (ptr) {
         for (int i = 0; i < tamanho; i++) {
             ptr[i].endBloco = i;
-            ptr[i].alterado = false;
-            ptr[i].custo = 0;
-            ptr[i].cacheHit = 0;
             for (int j = 0; j < 4; j++)
                 ptr[i].palavras[j] = rand();
         }
@@ -34,32 +30,32 @@ Bloco* criaRAM_aleatoria(int tamanho) {
     return ptr;
 }
 
-void liberaRAM(Bloco* ram) {
+void liberaRAM(LinhaCache* ram) {
     if (ram)
         free(ram);
 }
 
-void store(Bloco* ram, int pos, Bloco dado) {
-    ram[pos] = dado;
+void store(LinhaCache* ram, LinhaCache dado, int nroBloco) {
+    ram[nroBloco] = dado;
 }
 
-Bloco load(Bloco* ram, int pos) {
-    return ram[pos];
+LinhaCache load(LinhaCache* ram, int endRAM) {
+    return ram[endRAM];
 }
 
 
 
-void imprimeBloco(Bloco* bloco) {
+void imprimeLinhaCache(LinhaCache* LinhaCache) {
     printf("[");
     for (int i = 0; i < 4; i++) 
-        printf("%d%s", bloco->palavras[i], (i < 3) ? ", " : "" );
+        printf("%d%s", LinhaCache->palavras[i], (i < 3) ? ", " : "" );
     printf("] ");
 }
 
-void imprimeRAM(Bloco* ram, int tam) {
+void imprimeRAM(LinhaCache* ram, int tam) {
     printf("[ ");
     for (int i = 0; i < tam; i++) {
-        imprimeBloco(ram[i].palavras);
+        imprimeLinhaCache(ram[i].palavras);
         printf("%s", (i < tam - 1) ? ", " : "");
     }
     printf("]\n");

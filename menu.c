@@ -65,7 +65,8 @@ int menu_run(char *opcoes[], int n_opcoes, char *titulo) {
 // Auxiliar para desenhar checkboxes
 void desenhar_structs(int highlight, ConfigItem *itens, int n_itens, char *titulo) {
     int max_y, max_x;
-    getmaxyx(stdscr, max_y, max_x);
+    getmaxyx(stdscr
+        , max_y, max_x);
     erase();
     box(stdscr, 0, 0);
     mvprintw(1, (max_x - strlen(titulo)) / 2, "%s", titulo);
@@ -93,6 +94,7 @@ void desenhar_structs(int highlight, ConfigItem *itens, int n_itens, char *titul
     refresh();
 }
 
+// Menu de checkboxes
 void menu_checkbox(ConfigItem *itens, int n_itens, char *titulo) {
     int highlight = 1;
     int c;
@@ -118,7 +120,7 @@ void menu_checkbox(ConfigItem *itens, int n_itens, char *titulo) {
         desenhar_structs(highlight, itens, n_itens, titulo);
     }
 }
-
+// Menu para entrada de valor numérico
 int menu_valor(char *mensagem) {
     char input[50];
     int max_y, max_x;
