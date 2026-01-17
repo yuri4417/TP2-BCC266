@@ -34,10 +34,8 @@ int main() {
         switch(escolha) {
             case 1: //Iniciar Benchmark
                 setupBenchmark(&metrics, configs);
-                CacheBenchmark(metrics, configs);
-                if (mostrar_relatorio(&metrics, metrics.relogio))
-                   //salvar na tabela
-                break;
+                CacheBenchmark(&metrics, configs);
+                mostrar_relatorio(&metrics);
                 break;
             case 2: //Configuracoes
                 tela_configs(configs, "Configuracoes do Sistema", (sizeof(configs) / sizeof(ConfigItem))); 

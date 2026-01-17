@@ -6,22 +6,12 @@
 
 typedef struct {
     long int relogio;
-    int tamRAM;
-    int tamWriteBuffer;
-
+    long qtdStalls;
+    int tamL1, tamL2, tamL3, tamRAM, tamWriteBuffer;
+    int hitsL1, missesL1;
+    int hitsL2, missesL2;
+    int hitsL3, missesL3;
     
-    int tamL1;
-    int hitsL1;
-    int missesL1;
-
-    int tamL2;
-    int hitsL2;
-    int missesL2;
-
-    int tamL3;
-    int hitsL3;
-    int missesL3;
-
     int N_INST;
     int N_PROB;
     int N_FOR;
@@ -69,8 +59,8 @@ typedef struct {
 } Instrucao;
 
 typedef struct {
-    Endereco add;
-    int valor;
+    int endBloco;
+    LinhaCache dado;
 } ItemBuffer;
 
 typedef struct {
@@ -83,6 +73,7 @@ typedef struct {
     long int ultimoUso;
     int custoPorStore;
 
+    long qtdStalls;
 } WriteBuffer;
 
 

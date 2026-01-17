@@ -20,14 +20,20 @@ LinhaCache* criaRAM_vazia(int tamanho) {
 
 
 LinhaCache* criaRAM_aleatoria(int tamanho) {
-    LinhaCache *ptr = (LinhaCache*) malloc(sizeof(LinhaCache));
+    LinhaCache *ptr = (LinhaCache*) malloc(sizeof(LinhaCache) * tamanho);
+
     if (ptr) {
         for (int i = 0; i < tamanho; i++) {
             ptr[i].endBloco = i;
+            ptr[i].preenchido = true;
+            ptr[i].alterado = false;
+            ptr[i].prioridade = 0;
+            
             for (int j = 0; j < 4; j++)
                 ptr[i].palavras[j] = rand();
         }
     }
+
     return ptr;
 }
 

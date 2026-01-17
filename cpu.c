@@ -12,9 +12,12 @@ void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, 
         Instrucao atual = programa[PC];
         opcode = atual.opcode;
 
+        if (opcode == -1)
+            break;
+
         (*relogio)++;
-        reg1 = MMU_Read(atual.add1, L1, L2, L3, RAM, relogio);
-        reg2 = MMU_Read(atual.add2, L1, L2, L3, RAM, relogio);
+        reg1 = MMU_Read(atual.add1, L1, L2, L3, RAM, buffer, configBuffer, relogio);
+        reg2 = MMU_Read(atual.add2, L1, L2, L3, RAM, buffer, configBuffer, relogio);
         switch (opcode) {
             // case -1:
             //     break;
@@ -26,7 +29,7 @@ void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, 
                 break;
         }
 
-        MMU_Write(atual.add3, reg3.palavras[atual.add3.endPalavra], L1, L2, L3, RAM, buffer, configBuffer, relogio);
+        MMU_Write(L1, L2, L3, RAM, buffer, atual.add3, reg3.palavras[atual.add3.endPalavra], configBuffer, relogio);
         PC++;
 
     }

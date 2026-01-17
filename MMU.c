@@ -109,45 +109,78 @@ int transfereCache(Cache* cacheOrigem, Cache* cacheDestino, int indiceOrigem, in
     return posDestino;
 }
 
+void buffer_add(WriteBuffer *wb, int endBloco, LinhaCache linha, long *relogio) {
+    long delta = *relogio - wb->ultimoUso;
+    if (delta > 0) {
+        long qtdStores = delta / wb->custoPorStore;
 
-void salvaRAM(Cache* L3, int endRAM, LinhaCache *RAM) { // Da cache l3 pra RAM
+        if (qtdStores > 0) {
+            if (qtdStores > wb->qtdAtual)
+                qtdStores = wb->qtdAtual;
+
+            wb->qtdAtual -= qtdStores;
+            wb->ultimoUso += (qtdStores * wb->custoPorStore);
+        }
+    }
+
+    if (wb->qtdAtual == 0)
+        wb->ultimoUso = *relogio;
+        
+    while (wb->qtdAtual >= wb->tamMax) {
+        *relogio += wb->custoPorStore;
+        wb->ultimoUso = *relogio;
+        
+        wb->qtdAtual--;
+        wb->inicio = (wb->inicio + 1) % wb->tamMax;
+        wb->qtdStalls++;
+    }
+
+    wb->fila[wb->fim].endBloco = endBloco;
+    wb->fila[wb->fim].dado = linha;
+
+    wb->fim = (wb->fim + 1) % wb->tamMax;
+    wb->qtdAtual++;
+}
+
+void salvaRAM(Cache* L3, int indice, LinhaCache *RAM, WriteBuffer *buffer, int ConfigBuffer, long int *relogio) { // Da cache l3 pra RAM
     if(!L3 || !RAM)
         return;
     
-    int indiceAntigo = buscaDadoAntigo(L3,endRAM); // vai pegar o indice  do dado mais antigo que a função retornar
     
-    if(L3->memoria[indiceAntigo].preenchido)
+    if(L3->memoria[indice].preenchido && L3->memoria[indice].alterado)
     {
-        int enderecoAntigo = L3->memoria[indiceAntigo].endBloco;
-    
-        RAM[enderecoAntigo] = L3->memoria[indiceAntigo];
-        
-        L3->memoria[indiceAntigo].preenchido = false;
+        int endereco = L3->memoria[indice].endBloco;
 
-    }
-        
+        if (ConfigBuffer)
+            buffer_add(buffer, endereco, L3->memoria[indice], relogio);
+        else {
+            RAM[endereco] = L3->memoria[indice];
+            *relogio += CUSTO_RAM;
+        }
+        L3->memoria[indice].alterado = false;
+    }      
 }
 
-int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM) { // Da RAM pra cache l3
+int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM, WriteBuffer *buffer, int ConfigBuffer, long int *relogio) { // Da RAM pra cache l3
     if(!RAM || !L3)
         return -1;
+
     int indiceAntigo = buscaDadoAntigo(L3, endRAM);//pega qual valor não está sendo usado para passar pra RAM
     
-    if(L3->memoria[indiceAntigo].preenchido)   
-        salvaRAM(L3, endRAM, RAM);
+    salvaRAM(L3, indiceAntigo, RAM, buffer, ConfigBuffer, relogio);
     
     L3->memoria[indiceAntigo] = RAM[endRAM];
-
     L3->memoria[indiceAntigo].endBloco = endRAM;
     L3->memoria[indiceAntigo].preenchido = true;
-    // observar qual valor inicializar na prioridade
+    L3->memoria[indiceAntigo].alterado = false;
+    L3->memoria[indiceAntigo].prioridade = *relogio;
 
     return indiceAntigo;
 }
 
 
 
-int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, long int *relogio) {
+int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, int configBuffer, long int *relogio) {
 
     *relogio += CUSTO_L1;
     int pos = buscarCache(L1, add.endBloco, *relogio);
@@ -167,7 +200,7 @@ int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, long 
     }
 
     *relogio += CUSTO_RAM;
-    int novoposL3 = carregaRAM(L3, add.endBloco, RAM);
+    int novoposL3 = carregaRAM(L3, add.endBloco, RAM, buffer, configBuffer, relogio);
     int novoposL2 = transfereCache(L3, L2, novoposL3, add.endBloco, *relogio);
     return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio);
 }
@@ -175,8 +208,8 @@ int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, long 
 
 
 
-LinhaCache MMU_Read(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, long int *relogio) {
-    int posL1 = moveL1(add, L1, L2, L3, RAM, relogio);
+LinhaCache MMU_Read(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, int configBuffer, long int *relogio) {
+    int posL1 = moveL1(add, L1, L2, L3, RAM, buffer, configBuffer, relogio);
 
     if (posL1 != -1)
         return L1->memoria[posL1];
@@ -185,56 +218,17 @@ LinhaCache MMU_Read(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *R
 
 }
 
-void writeL1(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Endereco add, int valor, long int *relogio) {
-    int posL1 = moveL1(add, L1, L2, L3, RAM, relogio);
+void MMU_Write(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, Endereco add, int valor, int configBuffer, long int *relogio) {
+    int endpalavra = add.endPalavra;
+
+    int posL1 = moveL1(add, L1, L2, L3, RAM, buffer, configBuffer, relogio);
     if (posL1 != -1) {
-        L1->memoria[posL1].palavras[add.endPalavra] = valor;
+        L1->memoria[posL1].palavras[endpalavra] = valor;
         L1->memoria[posL1].alterado = true;
-        L1->memoria[posL1].prioridade = *relogio;
         L1->memoria[posL1].preenchido = true;
+        L1->memoria[posL1].prioridade = *relogio;
     }
-}
-
-void MMU_Write(Endereco add, int valor, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, int configBuffer, long int *relogio) {
-    if (configBuffer) {
-        long delta = *relogio - buffer->ultimoUso;
-        long qtdStores = delta / buffer->custoPorStore;
-
-        long int relogioBackground = *relogio; // Relógio temporário. O tempo para escrever no buffer 
-                                            // não conta no relógio principal, pois já foi contabilizado (paralelismo)
-
-
-        while (qtdStores > 0 && buffer->qtdAtual > 0) {
-            ItemBuffer temp = buffer->fila[buffer->inicio];
-            writeL1(L1, L2, L3, RAM, temp.add, temp.valor, &relogioBackground);
-
-            buffer->inicio = (buffer->inicio + 1) % buffer->tamMax;
-            buffer->qtdAtual--;
-            buffer->ultimoUso += buffer->custoPorStore;
-            qtdStores--;
-        }
-
-        if (buffer->qtdAtual == 0)
-            buffer->ultimoUso = *relogio;
-
-        if (buffer->qtdAtual == buffer->tamMax) {
-            *relogio += buffer->custoPorStore;
-
-            ItemBuffer temp = buffer->fila[buffer->inicio];
-            writeL1(L1, L2, L3, RAM, temp.add, temp.valor, relogio);
-
-            buffer->inicio = (buffer->inicio + 1) % buffer->tamMax;
-            buffer->qtdAtual--;
-            buffer->ultimoUso = *relogio;
-        }
-
-        buffer->fila[buffer->fim].add = add;
-        buffer->fila[buffer->fim].valor = valor;
-        buffer->fim = (buffer->fim + 1) % buffer->tamMax;
-        buffer->qtdAtual++;
-
-    } else {
-        writeL1(L1, L2, L3, RAM, add, valor, relogio);
-    }
+    else
+        exit(-1);
 }
 

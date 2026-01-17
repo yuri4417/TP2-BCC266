@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <ctype.h> 
 
+
+#define COR_VERDE 1
+#define COR_VERMELHO 2
+#define COR_AMARELO 3
+#define COR_TITULO 4
+
 void menu_init() {
     initscr();
     noecho();
@@ -148,41 +154,104 @@ int menu_valor(char *mensagem) {
     return atoi(input);
 }
 
-int mostrar_relatorio(BenchMetrics *m, long tempoTotal) {
+int mostrar_relatorio(BenchMetrics *m) {
     clear();
     box(stdscr, 0, 0);
-    
+
+    if (has_colors()) {
+        start_color();
+        init_pair(COR_VERDE, COLOR_GREEN, COLOR_BLACK);
+        init_pair(COR_VERMELHO, COLOR_RED, COLOR_BLACK);
+        init_pair(COR_AMARELO, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COR_TITULO, COLOR_CYAN, COLOR_BLACK);
+    }
+
+    long tL1 = m->hitsL1 + m->missesL1;
+    long tL2 = m->hitsL2 + m->missesL2;
+    long tL3 = m->hitsL3 + m->missesL3;
+
+    float pL1 = tL1 ? (float)m->hitsL1/tL1 * 100 : 0;
+    float pL2 = tL2 ? (float)m->hitsL2/tL2 * 100 : 0;
+    float pL3 = tL3 ? (float)m->hitsL3/tL3 * 100 : 0;
+
+    attron(A_BOLD | COLOR_PAIR(COR_TITULO));
+    mvprintw(1, 2, "=== RELATORIO DE BENCHMARK ===");
+    attroff(A_BOLD | COLOR_PAIR(COR_TITULO));
+
+    mvhline(2, 1, ACS_HLINE, getmaxx(stdscr)-2); 
+
+
     attron(A_BOLD);
-    mvprintw(1, 2, "--- RESULTADOS DA SIMULACAO ---");
+    mvprintw(3, 2, "CONFIGURACAO:");
     attroff(A_BOLD);
 
-    mvprintw(3, 2, "Tempo Total: %ld ciclos", tempoTotal);
-    
-    mvprintw(5, 2, "L1 Hits: %d | Misses: %d", m->hitsL1, m->missesL1);
-    mvprintw(6, 2, "L2 Hits: %d | Misses: %d", m->hitsL2, m->missesL2);
-    mvprintw(7, 2, "L3 Hits: %d | Misses: %d", m->hitsL3, m->missesL3);
-    
-    mvprintw(9, 2, "RAM Size: %d blocos", m->tamRAM);
-    mvprintw(10, 2, "Buffer Size: %d", m->tamWriteBuffer);
+    mvprintw(4, 4, "L1: %d | L2: %d | L3: %d (blocos)", m->tamL1, m->tamL2, m->tamL3);
+    mvprintw(5, 4, "RAM: %d blocos", m->tamRAM);
 
-    attron(A_REVERSE);
-    mvprintw(15, 2, " Deseja salvar este resultado na Tabela? (S/N) ");
-    attroff(A_REVERSE);
+
+    mvprintw(6, 4, "Buffer de Escrita: ");
+    if (m->tamWriteBuffer != -1) {
+        attron(COLOR_PAIR(COR_VERDE) | A_BOLD);
+        printw("ATIVADO (Tam: %d)", m->tamWriteBuffer);
+        attroff(COLOR_PAIR(COR_VERDE) | A_BOLD);
+    } else {
+        attron(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
+        printw("DESATIVADO");
+        attroff(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
+    }
+
+    mvhline(7, 1, ACS_HLINE, getmaxx(stdscr)-2);
+
+
+    attron(A_BOLD);
+    mvprintw(8, 2, "ESTATISTICAS DE CACHE:");
+    attroff(A_BOLD);
+
+    mvprintw(9, 4,  "L1 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL1, pL1, m->missesL1);
+    mvprintw(10, 4, "L2 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL2, pL2, m->missesL2);
+    mvprintw(11, 4, "L3 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL3, pL3, m->missesL3);
     
+    mvprintw(12, 4, "Acessos a RAM: %d", m->missesL3);
+
+    mvhline(13, 1, ACS_HLINE, getmaxx(stdscr)-2);
+
+
+    mvprintw(15, 4, "CPU Stalls: ");
+    
+    if (m->tamWriteBuffer != -1) {
+        if (m->qtdStalls > 0) {
+            attron(COLOR_PAIR(COR_AMARELO) | A_BLINK); 
+            printw("%ld Stalls de CPU", m->qtdStalls);
+            attroff(COLOR_PAIR(COR_AMARELO) | A_BLINK);
+        } else {
+            attron(COLOR_PAIR(COR_VERDE));
+            printw("Nenhum Stall de CPU identificado");
+            attroff(COLOR_PAIR(COR_VERDE));
+        }
+    } else
+        printw("Buffer desligado");
+    
+
+    mvhline(16, 1, ACS_HLINE, getmaxx(stdscr)-2);
+
+
+    attron(A_REVERSE | A_BOLD);
+    mvprintw(18, 2, " TEMPO TOTAL: %ld ciclos ", m->relogio);
+    attroff(A_REVERSE | A_BOLD);
+
+
+    mvprintw(21, 2, "Deseja salvar este resultado na Tabela? (S/N)");
     refresh();
 
-    while(1) {
-        int c = getch(); 
-        c = tolower(c);  
 
-        if (c == 's') {
-            return 1; 
-        }
-        else if (c == 'n' || c == 27) { // 27 = ESC
-            return 0; 
-        }
+    while(1) {
+        int c = tolower(getch()); 
+        if (c == 's') return 1;
+        if (c == 'n' || c == 27) return 0; // 27 = ESC
         
-        mvprintw(16, 2, "Opcao invalida! Pressione S ou N.");
+        attron(COLOR_PAIR(COR_VERMELHO));
+        mvprintw(22, 2, "Opcao invalida! Use S ou N.");
+        attroff(COLOR_PAIR(COR_VERMELHO));
         refresh();
     }
 }

@@ -8,6 +8,9 @@
 #include "structs.h"
 #include "MMU.h"
 
+
+
+
 Instrucao* gerarInstrucoes(int N_INST, int N_MEM, int N_PROB, int N_FOR, int N_OPCODE, int N_WORD) {
 
     Instrucao* programa = (Instrucao*) malloc((N_INST + 1) * sizeof(Instrucao));
@@ -77,40 +80,40 @@ void setupBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     metrics->N_FOR = menu_valor("Numero de Instrucoes na Repeticao");
 }
 
-void CacheBenchmark(BenchMetrics metrics, ConfigItem *configs) {
-    Cache *L1 = criaCache(metrics.tamL1);
-    Cache *L2 = criaCache(metrics.tamL2);
-    Cache *L3 = criaCache(metrics.tamL3);
-    LinhaCache *RAM = criaRAM_aleatoria(metrics.tamRAM);
+void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
+    Cache *L1 = criaCache(metrics->tamL1); Cache *L2 = criaCache(metrics->tamL2); Cache *L3 = criaCache(metrics->tamL3);
+    LinhaCache *RAM = criaRAM_aleatoria(metrics->tamRAM);
+    Instrucao *programa = gerarInstrucoes(metrics->N_INST, metrics->tamRAM, metrics->N_PROB, metrics->N_FOR, 2, 3);
 
-
-    Instrucao *programa = gerarInstrucoes(metrics.N_INST, metrics.tamRAM, metrics.N_PROB, metrics.N_FOR, 2, 3);
 
     WriteBuffer buffer;
     if (configs[0].ativo) {
-        buffer.fila = (ItemBuffer*) malloc(metrics.tamWriteBuffer * sizeof(ItemBuffer));
+        buffer.fila = (ItemBuffer*) malloc(metrics->tamWriteBuffer * sizeof(ItemBuffer));
         buffer.inicio = 0;
+        buffer.qtdStalls = 0;
         buffer.fim = 0;
         buffer.qtdAtual = 0;
-        buffer.tamMax = metrics.tamWriteBuffer;
+        buffer.tamMax = metrics->tamWriteBuffer;
         buffer.ultimoUso = 0;
-        buffer.custoPorStore = 40; 
+        buffer.custoPorStore = 600; 
     }
-    cpu(L1, L2, L3, RAM, programa, &metrics.relogio, &buffer, configs[0].ativo);
-    metrics.hitsL1 = L1->hit;
-    metrics.missesL1 = L1->miss;
-    metrics.hitsL2 = L2->hit;
-    metrics.missesL2 = L2->miss;
-    metrics.hitsL3 = L3->hit;
-    metrics.missesL3 = L3->miss;
+    else
+        metrics->tamWriteBuffer = -1;
+    
 
-    mostrar_relatorio(&metrics, metrics.relogio);
 
-    destroiCache(L1);
-    destroiCache(L2);
-    destroiCache(L3);
-    free(RAM);
+    cpu(L1, L2, L3, RAM, programa, &metrics->relogio, &buffer, configs[0].ativo);
+
+
+    metrics->hitsL1 = L1->hit; metrics->missesL1 = L1->miss;
+    metrics->hitsL2 = L2->hit; metrics->missesL2 = L2->miss;
+    metrics->hitsL3 = L3->hit; metrics->missesL3 = L3->miss;
+
+    metrics->qtdStalls = buffer.qtdStalls;
+
+    destroiCache(L1); destroiCache(L2); destroiCache(L3); 
+    free(programa); free(RAM);
     if (configs[0].ativo)
         free(buffer.fila);
-    free(programa);
 }
+
