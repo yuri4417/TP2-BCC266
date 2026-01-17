@@ -1,16 +1,16 @@
 #include "MMU.h"
 #include "ram.h"
-#include <stdlib.h>
 #include "structs.h"
 
-//Custos hipoteticos conforme a hierarquia 
-#define CUSTO_C1 10
-#define CUSTO_C2 110
-#define CUSTO_C3 1110
-#define CUSTO_RAM 11110
+#include "limits.h"
+#include <stdlib.h>
 
-// contador de custos hipoteticos pra gerar a tabela de resultado final
-long int tempoTotalSimulacao = 0;
+//Custos hipoteticos conforme a hierarquia 
+#define CUSTO_L1 10
+#define CUSTO_L2 30
+#define CUSTO_L3 100
+#define CUSTO_RAM 600
+
 
 Cache* criaCache(int tamanhoTotal) {
     Cache *cache = (Cache*) malloc(sizeof(Cache));
@@ -27,6 +27,7 @@ Cache* criaCache(int tamanhoTotal) {
 
         for (int i = 0; i < tamanhoTotal; i++) {
             cache->memoria[i].preenchido = false;
+            cache->memoria[i].alterado = false;
             cache->memoria[i].prioridade = 0;
             cache->memoria[i].endBloco = -1;
         }
@@ -36,10 +37,11 @@ Cache* criaCache(int tamanhoTotal) {
 }
 
 void destroiCache(Cache* c) {
-    if (c)
+    if (c) {
         if (c->memoria)
             free(c->memoria);
         free(c);
+    }
 }
 
 int buscarCache(Cache* c, int endRAM, long int relogioAtual) {
@@ -64,7 +66,7 @@ int buscarCache(Cache* c, int endRAM, long int relogioAtual) {
 
 int buscaDadoAntigo(Cache* c, int endRAM) {
     int posMenorPrioridade = -1;
-    int menorPrioridade = __INT_MAX__;
+    long int menorPrioridade = LONG_MAX;
 
 
     int posConjunto = endRAM % c->nroConjuntos;
@@ -107,23 +109,6 @@ int transfereCache(Cache* cacheOrigem, Cache* cacheDestino, int indiceOrigem, in
     return posDestino;
 }
 
-int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM) { // Da RAM pra cache l3
-    if(!RAM || !L3)
-        return -1;
-    int indiceAntigo = buscaDadoAntigo(L3, endRAM);//pega qual valor não está sendo usado para passar pra RAM
-    
-    if(L3->memoria[indiceAntigo].preenchido)   
-        salvaRAM(L3, endRAM, RAM);
-    
-    L3->memoria[indiceAntigo] = RAM[endRAM];
-
-    L3->memoria[indiceAntigo].endBloco = endRAM;
-    L3->memoria[indiceAntigo].preenchido = true;
-    // observar qual valor inicializar na prioridade
-
-    return indiceAntigo;
-}
-
 
 void salvaRAM(Cache* L3, int endRAM, LinhaCache *RAM) { // Da cache l3 pra RAM
     if(!L3 || !RAM)
@@ -143,46 +128,113 @@ void salvaRAM(Cache* L3, int endRAM, LinhaCache *RAM) { // Da cache l3 pra RAM
         
 }
 
-LinhaCache MMU(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, long int *relogio) {
+int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM) { // Da RAM pra cache l3
+    if(!RAM || !L3)
+        return -1;
+    int indiceAntigo = buscaDadoAntigo(L3, endRAM);//pega qual valor não está sendo usado para passar pra RAM
+    
+    if(L3->memoria[indiceAntigo].preenchido)   
+        salvaRAM(L3, endRAM, RAM);
+    
+    L3->memoria[indiceAntigo] = RAM[endRAM];
 
-    (*relogio)++;
+    L3->memoria[indiceAntigo].endBloco = endRAM;
+    L3->memoria[indiceAntigo].preenchido = true;
+    // observar qual valor inicializar na prioridade
 
-    int posL1 = buscarCache(L1, add.endBloco, *relogio);
-    if (posL1 != -1) {
-        L1->hit++;
-        return L1->memoria[posL1];
-    }
-    L1->miss++;
+    return indiceAntigo;
+}
 
+
+
+int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, long int *relogio) {
+
+    *relogio += CUSTO_L1;
+    int pos = buscarCache(L1, add.endBloco, *relogio);
+    if (pos != -1) 
+        return pos;
+
+    *relogio += CUSTO_L2;
     int posL2 = buscarCache(L2, add.endBloco, *relogio);
-    if (posL2 != -1) {
-        L2->hit++;
-        int novaL1 = transfereCache(L2, L1, posL2, add.endBloco, *relogio);
-        return L1->memoria[novaL1];
-    }
-    L2->miss++;
+    if (posL2 != -1) 
+        return transfereCache(L2, L1, posL2, add.endBloco, *relogio);
 
+    *relogio += CUSTO_L3;
     int posL3 = buscarCache(L3, add.endBloco, *relogio);
     if (posL3 != -1) {
-        L3->hit++;
-        int destL2 = transfereCache(L3, L2, posL3, add.endBloco, *relogio);
-        
-        int novaL1 = transfereCache(L2, L1, destL2, add.endBloco, *relogio);
-        return L1->memoria[novaL1];
+        int novoposL2 = transfereCache(L3, L2, posL3, add.endBloco, *relogio);
+        return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio);
     }
-    L3->miss++;
 
-    // Dado não está em nenhuma cache, buscar na RAM
-    // carregaRAM(L3, add.endBloco);
-    // transfereCache(L3, L2, add.endBloco, 0);
-    // transfereCache(L2, L1, add.endBloco, 0);
-    // int posFinalL1 = buscarCache(L1, add.endBloco, *relogio);
-    // if (posFinalL1 == -1) 
-    //     exit(-1);
-    
-    // return L1->memoria[posFinalL1];
+    *relogio += CUSTO_RAM;
+    int novoposL3 = carregaRAM(L3, add.endBloco, RAM);
+    int novoposL2 = transfereCache(L3, L2, novoposL3, add.endBloco, *relogio);
+    return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio);
+}
+
+
+
+
+LinhaCache MMU_Read(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, long int *relogio) {
+    int posL1 = moveL1(add, L1, L2, L3, RAM, relogio);
+
+    if (posL1 != -1)
+        return L1->memoria[posL1];
+    else
+        exit(-1);
 
 }
 
-//Vou completar isso aqui
-// int UCM
+void writeL1(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Endereco add, int valor, long int *relogio) {
+    int posL1 = moveL1(add, L1, L2, L3, RAM, relogio);
+    if (posL1 != -1) {
+        L1->memoria[posL1].palavras[add.endPalavra] = valor;
+        L1->memoria[posL1].alterado = true;
+        L1->memoria[posL1].prioridade = *relogio;
+        L1->memoria[posL1].preenchido = true;
+    }
+}
+
+void MMU_Write(Endereco add, int valor, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, int configBuffer, long int *relogio) {
+    if (configBuffer) {
+        long delta = *relogio - buffer->ultimoUso;
+        long qtdStores = delta / buffer->custoPorStore;
+
+        long int relogioBackground = *relogio; // Relógio temporário. O tempo para escrever no buffer 
+                                            // não conta no relógio principal, pois já foi contabilizado (paralelismo)
+
+
+        while (qtdStores > 0 && buffer->qtdAtual > 0) {
+            ItemBuffer temp = buffer->fila[buffer->inicio];
+            writeL1(L1, L2, L3, RAM, temp.add, temp.valor, &relogioBackground);
+
+            buffer->inicio = (buffer->inicio + 1) % buffer->tamMax;
+            buffer->qtdAtual--;
+            buffer->ultimoUso += buffer->custoPorStore;
+            qtdStores--;
+        }
+
+        if (buffer->qtdAtual == 0)
+            buffer->ultimoUso = *relogio;
+
+        if (buffer->qtdAtual == buffer->tamMax) {
+            *relogio += buffer->custoPorStore;
+
+            ItemBuffer temp = buffer->fila[buffer->inicio];
+            writeL1(L1, L2, L3, RAM, temp.add, temp.valor, relogio);
+
+            buffer->inicio = (buffer->inicio + 1) % buffer->tamMax;
+            buffer->qtdAtual--;
+            buffer->ultimoUso = *relogio;
+        }
+
+        buffer->fila[buffer->fim].add = add;
+        buffer->fila[buffer->fim].valor = valor;
+        buffer->fim = (buffer->fim + 1) % buffer->tamMax;
+        buffer->qtdAtual++;
+
+    } else {
+        writeL1(L1, L2, L3, RAM, add, valor, relogio);
+    }
+}
+

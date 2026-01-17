@@ -134,16 +134,55 @@ int menu_valor(char *mensagem) {
     mvprintw(max_y / 2 - 1, (max_x - strlen(mensagem)) / 2, "%s", mensagem);
     move(max_y / 2 + 1, (max_x - 10) / 2);
     
-    getnstr(input, 49); // Lê a string de forma segura
+    getnstr(input, 49); 
 
     noecho();
     curs_set(0);
 
-    // Validação simplificada:
+   
     if (strlen(input) == 0) return -1;
     for (int i = 0; i < (int)strlen(input); i++) {
         if (!isdigit(input[i])) return -1; // Se houver algo que não é número, retorna -1
     }
 
-    return atoi(input); // Se passou na checagem, retorna o número (inclusive 0)
+    return atoi(input);
+}
+
+int mostrar_relatorio(BenchMetrics *m, long tempoTotal) {
+    clear();
+    box(stdscr, 0, 0);
+    
+    attron(A_BOLD);
+    mvprintw(1, 2, "--- RESULTADOS DA SIMULACAO ---");
+    attroff(A_BOLD);
+
+    mvprintw(3, 2, "Tempo Total: %ld ciclos", tempoTotal);
+    
+    mvprintw(5, 2, "L1 Hits: %d | Misses: %d", m->hitsL1, m->missesL1);
+    mvprintw(6, 2, "L2 Hits: %d | Misses: %d", m->hitsL2, m->missesL2);
+    mvprintw(7, 2, "L3 Hits: %d | Misses: %d", m->hitsL3, m->missesL3);
+    
+    mvprintw(9, 2, "RAM Size: %d blocos", m->tamRAM);
+    mvprintw(10, 2, "Buffer Size: %d", m->tamWriteBuffer);
+
+    attron(A_REVERSE);
+    mvprintw(15, 2, " Deseja salvar este resultado na Tabela? (S/N) ");
+    attroff(A_REVERSE);
+    
+    refresh();
+
+    while(1) {
+        int c = getch(); 
+        c = tolower(c);  
+
+        if (c == 's') {
+            return 1; 
+        }
+        else if (c == 'n' || c == 27) { // 27 = ESC
+            return 0; 
+        }
+        
+        mvprintw(16, 2, "Opcao invalida! Pressione S ou N.");
+        refresh();
+    }
 }

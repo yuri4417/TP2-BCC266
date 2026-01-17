@@ -53,11 +53,11 @@ void imprimeLinhaCache(LinhaCache* LinhaCache) {
     printf("] ");
 }
 
-void imprimeRAM(LinhaCache* ram, int tam) {
-    printf("[ ");
-    for (int i = 0; i < tam; i++) {
-        imprimeLinhaCache(ram[i].palavras);
-        printf("%s", (i < tam - 1) ? ", " : "");
-    }
-    printf("]\n");
-}
+// void imprimeRAM(LinhaCache* ram, int tam) {
+//     printf("[ ");
+//     for (int i = 0; i < tam; i++) {
+//         imprimeLinhaCache(ram[i].palavras);
+//         printf("%s", (i < tam - 1) ? ", " : "");
+//     }
+//     printf("]\n");
+// }

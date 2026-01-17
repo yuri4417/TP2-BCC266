@@ -2,18 +2,29 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 LIBS = -lncurses
 
-# Alvo final
-exe: main.o menu.o
-	$(CC) $(CFLAGS) -o exe main.o menu.o $(LIBS)
+OBJS = main.o menu.o utils.o cpu.o ram.o MMU.o
 
-# Regra para main.c
+exe: $(OBJS)
+	$(CC) $(CFLAGS) -o exe $(OBJS) $(LIBS)
+
 main.o: main.c menu.h
 	$(CC) $(CFLAGS) -c main.c
 
-# Regra para menu.c
 menu.o: menu.c menu.h
 	$(CC) $(CFLAGS) -c menu.c
 
-# Limpeza
+utils.o: utils.c utils.h structs.h
+	$(CC) $(CFLAGS) -c utils.c
+
+cpu.o: cpu.c cpu.h structs.h
+	$(CC) $(CFLAGS) -c cpu.c
+
+ram.o: ram.c ram.h structs.h
+	$(CC) $(CFLAGS) -c ram.c
+
+MMU.o: MMU.c MMU.h structs.h
+	$(CC) $(CFLAGS) -c MMU.c
+
+.PHONY: clean
 clean:
 	rm -f *.o exe

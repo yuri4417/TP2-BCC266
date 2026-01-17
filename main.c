@@ -1,19 +1,13 @@
 #include <stdio.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include "menu.h"
+#include "utils.h"
 #include "structs.h"
-
-void tela_opcoes_avancadas() {
-
-    static ConfigItem configs[] = {
-        {"Habilitar Firewall",  1, 0},
-        {"Logs do Sistema",     0, 0},
-        {"Modo Escuro",         1, 0},
-        {"SALVAR E VOLTAR",     0, 1} 
-    };
-    int n = sizeof(configs) / sizeof(ConfigItem);
-    menu_checkbox(configs, n, "CONFIGURACOES AVANCADAS");
+int a = 1;
+void tela_configs(ConfigItem *configs, char* text, int n) {
+    menu_checkbox(configs, n, text);
 }
 
 int main() {
@@ -25,27 +19,32 @@ int main() {
         "Sair"
     };
 
-    // INICIALIZAR RELOGIO EM ALGUM LUGAR
-
-
-    
+    ConfigItem configs[] = {
+        {"WriteBuffer",         0, 0},
+        {"Logs do Sistema",     0, 0},
+        {"Modo Escuro",         0, 0},
+        {"SALVAR E VOLTAR",     0, 1} 
+    };
+    BenchMetrics metrics;   
     menu_init();
     int rodando = 1;
     while(rodando) {
-        int escolha = menu_run(opcoes_principal, 4, "CacheBenchmark™- v0.5");
+        int escolha = menu_run(opcoes_principal, 4, "CacheBenchmark - v0.8");
 
         switch(escolha) {
             case 1: //Iniciar Benchmark
-                menu_close();
-                getchar();
-                menu_init();
+                setupBenchmark(&metrics, configs);
+                CacheBenchmark(metrics, configs);
+                if (mostrar_relatorio(&metrics, metrics.relogio))
+                   //salvar na tabela
+                break;
                 break;
             case 2: //Configuracoes
-                tela_opcoes_avancadas(); 
+                tela_configs(configs, "Configuracoes do Sistema", (sizeof(configs) / sizeof(ConfigItem))); 
                 break;
             case 3: //Tabela de Resultados
                 menu_close();
-                
+                break; 
             case -1: //Sair
             case 4:
                 rodando = 0;
