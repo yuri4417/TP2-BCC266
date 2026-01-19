@@ -69,13 +69,12 @@ void setupBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     metrics->tamL1 = menu_valor("Tamanho da Cache L1 (em blocos)");
     metrics->tamL2 = menu_valor("Tamanho da Cache L2 (em blocos)");
     metrics->tamL3 = menu_valor("Tamanho da Cache L3 (em blocos)");
-    metrics->tamRAM = menu_valor("Tamanho da RAM (em blocos)");
     if (configs[0].ativo)
         metrics->tamWriteBuffer = menu_valor("Tamanho do WriteBuffer");
 
     metrics->relogio = 0;
+    metrics->tamRAM = 1000;
 
-    metrics->N_INST = menu_valor("Numero de Instrucoes");
     metrics->N_PROB = menu_valor("Probabilidade de Repeticao (%%)");
     metrics->N_FOR = menu_valor("Numero de Instrucoes na Repeticao");
 }
@@ -83,7 +82,7 @@ void setupBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
 void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     Cache *L1 = criaCache(metrics->tamL1); Cache *L2 = criaCache(metrics->tamL2); Cache *L3 = criaCache(metrics->tamL3);
     LinhaCache *RAM = criaRAM_aleatoria(metrics->tamRAM);
-    Instrucao *programa = gerarInstrucoes(metrics->N_INST, metrics->tamRAM, metrics->N_PROB, metrics->N_FOR, 2, 3);
+    Instrucao *programa = gerarInstrucoes(10000, metrics->tamRAM, metrics->N_PROB, metrics->N_FOR, 2, 3);
 
 
     WriteBuffer buffer;
@@ -102,6 +101,11 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     
 
 
+    if (configs[1].ativo)
+        metrics->LIP = true;
+    else
+        metrics->LIP = false;
+
     cpu(L1, L2, L3, RAM, programa, &metrics->relogio, &buffer, configs);
 
 
@@ -112,7 +116,8 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     metrics->qtdStalls = buffer.qtdStalls;
 
     destroiCache(L1); destroiCache(L2); destroiCache(L3); 
-    free(programa); free(RAM);
+    liberaRAM(RAM);
+    free(programa);
     if (configs[0].ativo)
         free(buffer.fila);
 }

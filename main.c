@@ -15,7 +15,7 @@ int main() {
     char *opcoes_principal[] = {
         "Iniciar Benchmark",
         "Configuracoes",
-        "Tabela de Resultados",
+        "Tabela",
         "Sair"
     };
 

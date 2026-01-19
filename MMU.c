@@ -11,6 +11,9 @@
 #define CUSTO_L3 100
 #define CUSTO_RAM 600
 
+#define ID_BUFFER 0
+#define ID_LIP 1
+
 
 Cache* criaCache(int tamanhoTotal) {
     Cache *cache = (Cache*) malloc(sizeof(Cache));
@@ -43,6 +46,13 @@ void destroiCache(Cache* c) {
         free(c);
     }
 }
+
+
+void buffer_add(WriteBuffer *wb, int endBloco, LinhaCache linha, long *relogio);
+void salvaRAM(Cache* L3, int indice, LinhaCache *RAM, WriteBuffer *buffer, int ConfigBuffer, long int *relogio);
+
+
+
 
 
 int buscarCache(Cache* c, int endRAM, long int relogioAtual) {
@@ -86,7 +96,7 @@ int buscaDadoAntigo(Cache* c, int endRAM) {
     return posMenorPrioridade;
 }
 
-int transfereCache(Cache* cacheOrigem, Cache* cacheDestino, int indiceOrigem, int endRAM, long int relogioAtual, int configLIP) {
+int transfereCache(LinhaCache *RAM, WriteBuffer *buffer, ConfigItem *configs, Cache* cacheOrigem, Cache* cacheDestino, int indiceOrigem, int endRAM, long int *relogio, int configLIP) {
     LinhaCache dadoSobe = cacheOrigem->memoria[indiceOrigem];
 
     cacheOrigem->memoria[indiceOrigem].preenchido = false;
@@ -98,13 +108,14 @@ int transfereCache(Cache* cacheOrigem, Cache* cacheDestino, int indiceOrigem, in
 
         int destinoParaOrigem = buscaDadoAntigo(cacheOrigem, aux.endBloco);
 
+        salvaRAM(cacheOrigem, destinoParaOrigem, RAM, buffer, configs[ID_BUFFER].ativo, relogio);
         cacheOrigem->memoria[destinoParaOrigem] = aux;
-        cacheOrigem->memoria[destinoParaOrigem].prioridade = relogioAtual;
+        cacheOrigem->memoria[destinoParaOrigem].prioridade = *relogio;
         cacheOrigem->memoria[destinoParaOrigem].preenchido = true;
     }
 
     cacheDestino->memoria[posDestino] = dadoSobe;
-    cacheDestino->memoria[posDestino].prioridade = (configLIP) ? 0 : relogioAtual;
+    cacheDestino->memoria[posDestino].prioridade = (configLIP) ? 0 : *relogio;
     cacheDestino->memoria[posDestino].preenchido = true;
 
     return posDestino;
@@ -127,6 +138,22 @@ void buffer_add(WriteBuffer *wb, int endBloco, LinhaCache linha, long *relogio) 
     if (wb->qtdAtual == 0)
         wb->ultimoUso = *relogio;
         
+    if (wb->qtdAtual > 0) {
+        int i = wb->inicio;
+        int count = 0;
+        while (count < wb->qtdAtual) {
+            if (wb->fila[i].endBloco == endBloco) {
+                wb->fila[i].dado = linha;
+                return;
+            }
+            i = (i + 1) % wb->tamMax;
+            count++;
+        }
+    }
+        
+
+
+
     while (wb->qtdAtual >= wb->tamMax) {
         *relogio += wb->custoPorStore;
         wb->ultimoUso = *relogio;
@@ -150,16 +177,34 @@ void salvaRAM(Cache* L3, int indice, LinhaCache *RAM, WriteBuffer *buffer, int C
     
     if(L3->memoria[indice].preenchido && L3->memoria[indice].alterado)
     {
-        int endereco = L3->memoria[indice].endBloco;
+        int endRAM = L3->memoria[indice].endBloco;
 
         if (ConfigBuffer)
-            buffer_add(buffer, endereco, L3->memoria[indice], relogio);
+            buffer_add(buffer, endRAM, L3->memoria[indice], relogio);
         else {
-            RAM[endereco] = L3->memoria[indice];
+            RAM[endRAM] = L3->memoria[indice];
             *relogio += CUSTO_RAM;
         }
         L3->memoria[indice].alterado = false;
     }      
+}
+
+int procuraBuffer(WriteBuffer *wb, int endBloco, LinhaCache *linha) {
+    if (!wb || wb->qtdAtual == 0)
+        return 0;
+
+    int i = wb->inicio;
+    int achou = 0;
+
+    for (int cnt = 0; cnt < wb->qtdAtual; cnt++) {
+        if (wb->fila[i].endBloco == endBloco) {
+            *linha = wb->fila[i].dado;
+            achou = 1;
+            break;
+        }
+        i = (i + 1) % wb->tamMax;
+    }
+    return achou;
 }
 
 int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM, WriteBuffer *buffer, int ConfigBuffer, long int *relogio) { // Da RAM pra cache l3
@@ -169,8 +214,21 @@ int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM, WriteBuffer *buffer, int 
     int indiceAntigo = buscaDadoAntigo(L3, endRAM);//pega qual valor não está sendo usado para passar pra RAM
     
     salvaRAM(L3, indiceAntigo, RAM, buffer, ConfigBuffer, relogio);
+
+    LinhaCache linhaNova;
+    int achouBuffer = 0;
+
+    if (ConfigBuffer)
+        achouBuffer = procuraBuffer(buffer, endRAM, &linhaNova);
     
-    L3->memoria[indiceAntigo] = RAM[endRAM];
+    if (achouBuffer)
+        *relogio += CUSTO_L1;
+    else {
+        linhaNova = RAM[endRAM];
+        *relogio += CUSTO_RAM;
+    }
+
+    L3->memoria[indiceAntigo] = linhaNova;
     L3->memoria[indiceAntigo].endBloco = endRAM;
     L3->memoria[indiceAntigo].preenchido = true;
     L3->memoria[indiceAntigo].alterado = false;
@@ -178,8 +236,6 @@ int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM, WriteBuffer *buffer, int 
 
     return indiceAntigo;
 }
-
-
 
 int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, long int *relogio, ConfigItem *configs) {
 
@@ -191,23 +247,20 @@ int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Write
     *relogio += CUSTO_L2;
     int posL2 = buscarCache(L2, add.endBloco, *relogio);
     if (posL2 != -1) 
-        return transfereCache(L2, L1, posL2, add.endBloco, *relogio, configs[1].ativo);
+        return transfereCache(RAM, buffer, configs, L2, L1, posL2, add.endBloco, relogio, configs[ID_LIP].ativo);
 
     *relogio += CUSTO_L3;
     int posL3 = buscarCache(L3, add.endBloco, *relogio);
     if (posL3 != -1) {
-        int novoposL2 = transfereCache(L3, L2, posL3, add.endBloco, *relogio, 0);
-        return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio, configs[1].ativo);
+        int novoposL2 = transfereCache(RAM, buffer, configs, L3, L2, posL3, add.endBloco, relogio, 0);
+        return transfereCache(RAM, buffer, configs, L2, L1, novoposL2, add.endBloco, relogio, configs[ID_LIP].ativo);
     }
 
     *relogio += CUSTO_RAM;
-    int novoposL3 = carregaRAM(L3, add.endBloco, RAM, buffer, configs[0].ativo, relogio);
-    int novoposL2 = transfereCache(L3, L2, novoposL3, add.endBloco, *relogio, 0);
-    return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio, configs[1].ativo);
+    int novoposL3 = carregaRAM(L3, add.endBloco, RAM, buffer, configs[ID_BUFFER].ativo, relogio);
+    int novoposL2 = transfereCache(RAM, buffer, configs, L3, L2, novoposL3, add.endBloco, relogio, 0);
+    return transfereCache(RAM, buffer, configs, L2, L1, novoposL2, add.endBloco, relogio, configs[ID_LIP].ativo);
 }
-
-
-
 
 LinhaCache MMU_Read(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, long int *relogio, ConfigItem *configs) {
     int posL1 = moveL1(add, L1, L2, L3, RAM, buffer, relogio, configs);

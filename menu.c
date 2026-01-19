@@ -200,20 +200,30 @@ int mostrar_relatorio(BenchMetrics *m) {
         attroff(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
     }
 
-    mvhline(7, 1, ACS_HLINE, getmaxx(stdscr)-2);
+    mvprintw(7, 4, "LRU Insertion Policy (LIP): ");
+    if (m->LIP) {
+        attron(COLOR_PAIR(COR_VERDE) | A_BOLD);
+        printw("ATIVADA");
+        attroff(COLOR_PAIR(COR_VERDE) | A_BOLD);
+    } else {
+        attron(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
+        printw("DESATIVADA");
+        attroff(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
+    }
+
+    mvhline(8, 1, ACS_HLINE, getmaxx(stdscr)-2);
 
 
     attron(A_BOLD);
-    mvprintw(8, 2, "ESTATISTICAS DE CACHE:");
+    mvprintw(9, 2, "ESTATISTICAS DE CACHE:");
     attroff(A_BOLD);
 
-    mvprintw(9, 4,  "L1 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL1, pL1, m->missesL1);
-    mvprintw(10, 4, "L2 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL2, pL2, m->missesL2);
-    mvprintw(11, 4, "L3 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL3, pL3, m->missesL3);
+    mvprintw(10, 4,  "L1 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL1, pL1, m->missesL1);
+    mvprintw(11, 4, "L2 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL2, pL2, m->missesL2);
+    mvprintw(12, 4, "L3 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL3, pL3, m->missesL3);
     
-    mvprintw(12, 4, "Acessos a RAM: %d", m->missesL3);
-
-    mvhline(13, 1, ACS_HLINE, getmaxx(stdscr)-2);
+    mvprintw(13, 4, "Acessos a RAM: %d", m->missesL3);
+    mvhline(14, 1, ACS_HLINE, getmaxx(stdscr)-2);
 
 
     mvprintw(15, 4, "CPU Stalls: ");
@@ -230,6 +240,7 @@ int mostrar_relatorio(BenchMetrics *m) {
         }
     } else
         printw("Buffer desligado");
+
     
 
     mvhline(16, 1, ACS_HLINE, getmaxx(stdscr)-2);

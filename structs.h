@@ -12,7 +12,9 @@ typedef struct {
     int hitsL2, missesL2;
     int hitsL3, missesL3;
     
-    int N_INST;
+    bool LIP;
+
+
     int N_PROB;
     int N_FOR;
 } BenchMetrics;
@@ -57,6 +59,9 @@ typedef struct {
     Endereco add2;
     Endereco add3;
 } Instrucao;
+
+
+
 
 typedef struct {
     int endBloco;
