@@ -20,10 +20,10 @@ int main() {
     };
 
     ConfigItem configs[] = {
-        {"WriteBuffer",         0, 0},
-        {"Logs do Sistema",     0, 0},
-        {"Modo Escuro",         0, 0},
-        {"SALVAR E VOLTAR",     0, 1} 
+        {"WriteBuffer",                    0, 0},
+        {"LRU Insertion Policy (LIP)",     1, 0},
+        {"Modo Escuro",                    0, 0},
+        {"SALVAR E VOLTAR",                0, 1} 
     };
     BenchMetrics metrics;   
     menu_init();

@@ -44,6 +44,7 @@ void destroiCache(Cache* c) {
     }
 }
 
+
 int buscarCache(Cache* c, int endRAM, long int relogioAtual) {
     int posCache = endRAM % c->nroConjuntos;
 
@@ -85,7 +86,7 @@ int buscaDadoAntigo(Cache* c, int endRAM) {
     return posMenorPrioridade;
 }
 
-int transfereCache(Cache* cacheOrigem, Cache* cacheDestino, int indiceOrigem, int endRAM, long int relogioAtual) {
+int transfereCache(Cache* cacheOrigem, Cache* cacheDestino, int indiceOrigem, int endRAM, long int relogioAtual, int configLIP) {
     LinhaCache dadoSobe = cacheOrigem->memoria[indiceOrigem];
 
     cacheOrigem->memoria[indiceOrigem].preenchido = false;
@@ -103,7 +104,7 @@ int transfereCache(Cache* cacheOrigem, Cache* cacheDestino, int indiceOrigem, in
     }
 
     cacheDestino->memoria[posDestino] = dadoSobe;
-    cacheDestino->memoria[posDestino].prioridade = relogioAtual;
+    cacheDestino->memoria[posDestino].prioridade = (configLIP) ? 0 : relogioAtual;
     cacheDestino->memoria[posDestino].preenchido = true;
 
     return posDestino;
@@ -180,7 +181,7 @@ int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM, WriteBuffer *buffer, int 
 
 
 
-int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, int configBuffer, long int *relogio) {
+int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, long int *relogio, ConfigItem *configs) {
 
     *relogio += CUSTO_L1;
     int pos = buscarCache(L1, add.endBloco, *relogio);
@@ -190,26 +191,26 @@ int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Write
     *relogio += CUSTO_L2;
     int posL2 = buscarCache(L2, add.endBloco, *relogio);
     if (posL2 != -1) 
-        return transfereCache(L2, L1, posL2, add.endBloco, *relogio);
+        return transfereCache(L2, L1, posL2, add.endBloco, *relogio, configs[1].ativo);
 
     *relogio += CUSTO_L3;
     int posL3 = buscarCache(L3, add.endBloco, *relogio);
     if (posL3 != -1) {
-        int novoposL2 = transfereCache(L3, L2, posL3, add.endBloco, *relogio);
-        return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio);
+        int novoposL2 = transfereCache(L3, L2, posL3, add.endBloco, *relogio, 0);
+        return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio, configs[1].ativo);
     }
 
     *relogio += CUSTO_RAM;
-    int novoposL3 = carregaRAM(L3, add.endBloco, RAM, buffer, configBuffer, relogio);
-    int novoposL2 = transfereCache(L3, L2, novoposL3, add.endBloco, *relogio);
-    return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio);
+    int novoposL3 = carregaRAM(L3, add.endBloco, RAM, buffer, configs[0].ativo, relogio);
+    int novoposL2 = transfereCache(L3, L2, novoposL3, add.endBloco, *relogio, 0);
+    return transfereCache(L2, L1, novoposL2, add.endBloco, *relogio, configs[1].ativo);
 }
 
 
 
 
-LinhaCache MMU_Read(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, int configBuffer, long int *relogio) {
-    int posL1 = moveL1(add, L1, L2, L3, RAM, buffer, configBuffer, relogio);
+LinhaCache MMU_Read(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, long int *relogio, ConfigItem *configs) {
+    int posL1 = moveL1(add, L1, L2, L3, RAM, buffer, relogio, configs);
 
     if (posL1 != -1)
         return L1->memoria[posL1];
@@ -218,10 +219,10 @@ LinhaCache MMU_Read(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *R
 
 }
 
-void MMU_Write(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, Endereco add, int valor, int configBuffer, long int *relogio) {
+void MMU_Write(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, Endereco add, int valor, long int *relogio, ConfigItem *configs) {
     int endpalavra = add.endPalavra;
 
-    int posL1 = moveL1(add, L1, L2, L3, RAM, buffer, configBuffer, relogio);
+    int posL1 = moveL1(add, L1, L2, L3, RAM, buffer, relogio, configs);
     if (posL1 != -1) {
         L1->memoria[posL1].palavras[endpalavra] = valor;
         L1->memoria[posL1].alterado = true;

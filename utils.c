@@ -102,7 +102,7 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     
 
 
-    cpu(L1, L2, L3, RAM, programa, &metrics->relogio, &buffer, configs[0].ativo);
+    cpu(L1, L2, L3, RAM, programa, &metrics->relogio, &buffer, configs);
 
 
     metrics->hitsL1 = L1->hit; metrics->missesL1 = L1->miss;

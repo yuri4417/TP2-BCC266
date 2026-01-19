@@ -4,7 +4,7 @@
 
 #include "MMU.h"
 
-void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, long int *relogio, WriteBuffer *buffer, int configBuffer) {
+void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, long int *relogio, WriteBuffer *buffer, ConfigItem *configs) {
     LinhaCache reg1, reg2, reg3;
     int PC = 0; 
     int opcode = programa[PC].opcode;
@@ -16,8 +16,8 @@ void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, 
             break;
 
         (*relogio)++;
-        reg1 = MMU_Read(atual.add1, L1, L2, L3, RAM, buffer, configBuffer, relogio);
-        reg2 = MMU_Read(atual.add2, L1, L2, L3, RAM, buffer, configBuffer, relogio);
+        reg2 = MMU_Read(atual.add2, L1, L2, L3, RAM, buffer, relogio, configs);
+        reg1 = MMU_Read(atual.add1, L1, L2, L3, RAM, buffer, relogio, configs);
         switch (opcode) {
             // case -1:
             //     break;
@@ -29,7 +29,7 @@ void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, 
                 break;
         }
 
-        MMU_Write(L1, L2, L3, RAM, buffer, atual.add3, reg3.palavras[atual.add3.endPalavra], configBuffer, relogio);
+        MMU_Write(L1, L2, L3, RAM, buffer, atual.add3, reg3.palavras[atual.add3.endPalavra], relogio, configs);
         PC++;
 
     }
