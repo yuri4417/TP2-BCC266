@@ -1,8 +1,8 @@
-CC = gcc
+ CC = gcc
 CFLAGS = -Wall -Wextra -g
 LIBS = -lncurses
 
-OBJS = main.o menu.o utils.o cpu.o ram.o MMU.o
+OBJS = main.o menu.o utils.o cpu.o ram.o MMU.o tabela.o
 
 exe: $(OBJS)
 	$(CC) $(CFLAGS) -o exe $(OBJS) $(LIBS)
@@ -24,6 +24,9 @@ ram.o: ram.c ram.h structs.h
 
 MMU.o: MMU.c MMU.h structs.h
 	$(CC) $(CFLAGS) -c MMU.c
+	
+tabela.: tabela.c tabela.h structs.h
+	$(CC) $(CFLAGS) -c tabela.c
 
 .PHONY: clean
 clean:

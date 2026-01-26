@@ -3,7 +3,7 @@
 #define MMU_H
 
 
-#include "structs.h"
+#include "structs.h" 
 
 Cache* criaCache(int qtdBlocos);
 void destroiCache(Cache* c);

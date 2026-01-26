@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 
-
+ 
 LinhaCache* criaRAM_aleatoria(int tamanho) {
     LinhaCache *ptr = (LinhaCache*) malloc(sizeof(LinhaCache) * tamanho);
 

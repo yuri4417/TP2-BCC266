@@ -257,8 +257,10 @@ int mostrar_relatorio(BenchMetrics *m) {
 
     while(1) {
         int c = tolower(getch()); 
-        if (c == 's') return 1;
-        if (c == 'n' || c == 27) return 0; // 27 = ESC
+        if (c == 's')   
+            return 1;
+        if (c == 'n' || c == 27) 
+            return 0; // 27 = ESC
         
         attron(COLOR_PAIR(COR_VERMELHO));
         mvprintw(22, 2, "Opcao invalida! Use S ou N.");

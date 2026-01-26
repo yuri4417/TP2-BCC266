@@ -47,7 +47,7 @@
 	#define TAB_HOR "\u2501" // ━ (horizontal)
 	#define TAB_VER "\u2503" // ┃ (vertical)
 	#define TAB_TL  "\u250F" // ┏ (top-left)
-	
+	 
 	#define TAB_ML  "\u2523" // ┣ (middle-left)
 	
 	#define TAB_BL  "\u2517" // ┗ (bottom-left)

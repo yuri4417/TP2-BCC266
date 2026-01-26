@@ -5,12 +5,13 @@
 #include "menu.h"
 #include "utils.h"
 #include "structs.h"
-int a = 1;
+#include "cores.h"
+#include "tabela.h"
 void tela_configs(ConfigItem *configs, char* text, int n) {
     menu_checkbox(configs, n, text);
 }
 // Função para rodar a bateria de testes 
-void rodarBateriaOficial(ConfigItem *configs) {
+/*void rodarBateriaOficial(ConfigItem *configs) {
     // Dados da tabela 
     int m1[3] = {8, 16, 32};
     int m2[3] = {32, 64, 128};
@@ -43,10 +44,11 @@ void rodarBateriaOficial(ConfigItem *configs) {
         mostrar_relatorio(&m); 
     }
 }
-
+*/
 int main() {
     srand(time(NULL));
     
+    BenchMetrics tabela[50];
     ConfigItem configs[] = {
         {"WriteBuffer",                    0, 0},
         {"LRU Insertion Policy (LIP)",     1, 0},
@@ -66,9 +68,9 @@ int main() {
                 BenchMetrics m;
                 setupBenchmark(&m, configs);
                 CacheBenchmark(&m, configs);
-                mostrar_relatorio(&m);
                 break;
-            case 2: // M1 - M5 Automático
+                mostrar_relatorio(&m);
+            case 2: // M1 - M5 automático
                 rodarBateriaOficial(configs);
                 break;
             case 3: // Configs

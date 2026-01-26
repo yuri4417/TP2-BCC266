@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 
-typedef struct {
+typedef struct { 
     long int relogio;
     long qtdStalls;
     int tamL1, tamL2, tamL3, tamRAM, tamWriteBuffer;

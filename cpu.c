@@ -11,7 +11,7 @@ void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, 
     while (opcode != -1) {
         Instrucao atual = programa[PC];
         opcode = atual.opcode;
-
+  
         if (opcode == -1)
             break;
 
@@ -21,6 +21,7 @@ void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, 
         switch (opcode) {
             // case -1:
             //     break;
+
             case 0:
                 reg3.palavras[atual.add3.endPalavra] = reg1.palavras[atual.add1.endPalavra] + reg2.palavras[atual.add2.endPalavra];
                 break;

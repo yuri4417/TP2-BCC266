@@ -236,7 +236,7 @@ int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM, WriteBuffer *buffer, int 
 
     return indiceAntigo;
 }
-
+ 
 int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, long int *relogio, ConfigItem *configs) {
 
     *relogio += CUSTO_L1;

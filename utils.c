@@ -95,7 +95,7 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
         buffer.tamMax = metrics->tamWriteBuffer;
         buffer.ultimoUso = 0;
         buffer.custoPorStore = 600; 
-    }
+    } 
     else
         metrics->tamWriteBuffer = -1;
     
@@ -113,7 +113,11 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     metrics->hitsL2 = L2->hit; metrics->missesL2 = L2->miss;
     metrics->hitsL3 = L3->hit; metrics->missesL3 = L3->miss;
 
-    metrics->qtdStalls = buffer.qtdStalls;
+    if (configs[0].ativo) {
+        metrics->qtdStalls = buffer.qtdStalls;
+    } else {
+        metrics->qtdStalls = 0;
+    }
 
     destroiCache(L1); destroiCache(L2); destroiCache(L3); 
     liberaRAM(RAM);
