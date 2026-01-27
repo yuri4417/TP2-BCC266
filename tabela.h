@@ -6,9 +6,9 @@
 void cabecalho();
 void imprimirLinha(int idMaquina, BenchMetrics *m);
 void rodape();
-
+void salvaTabela(int *qtdSalva, BenchMetrics *tabelaSalva, BenchMetrics m);
 //fuções para imprimir a tabela
-void rodarBateriaOficial(ConfigItem *configs);               // Fixa (M1 - M5)
+void testePadrao(ConfigItem *configs);               // Fixa (M1 - M5)
 
 void imprimirTabelaSalva(BenchMetrics *lista, int qtd);       // Variável (M1 - Mn)
 

@@ -11,7 +11,7 @@ void tela_configs(ConfigItem *configs, char* text, int n) {
     menu_checkbox(configs, n, text);
 }
 // Função para rodar a bateria de testes 
-/*void rodarBateriaOficial(ConfigItem *configs) {
+/*void testePadrao(ConfigItem *configs) {
     // Dados da tabela 
     int m1[3] = {8, 16, 32};
     int m2[3] = {32, 64, 128};
@@ -58,9 +58,10 @@ int main() {
 
     menu_init();
     int rodando = 1;
-    char *opcoes_principal[] = {"Iniciar Benchmark Manual", "Executar Tabela Oficial (M1-M5)", "Configuracoes", "Sair"};
-
+    char *opcoes_principal[] = {"Iniciar Benchmark Manual", "Opções de tabelas", "Configuracoes", "Sair"};
+    int qtdSalva = 0;
     while(rodando) {
+        system("clear");
         int escolha = menu_run(opcoes_principal, 4, "CacheBenchmark - BCC 266");
 
         switch(escolha) {
@@ -68,12 +69,25 @@ int main() {
                 BenchMetrics m;
                 setupBenchmark(&m, configs);
                 CacheBenchmark(&m, configs);
+                exibirRelatorioIndividual(&m,configs);
+                salvaTabela(&qtdSalva, tabela, m);
+                //mostrar_relatorio(&m);
                 break;
-                mostrar_relatorio(&m);
+                
             case 2: // M1 - M5 automático
-                rodarBateriaOficial(configs);
+                char *opcoesSubMenu []= {"Iniciar tabelas salvas", "Tabelas padrões"};
+                int opcao = menu_run(opcoesSubMenu, 2, "Opções de tabelas");
+                switch(opcao)
+                {
+                    case 1:
+                        imprimirTabelaSalva(tabela, qtdSalva);
+                        break; 
+                    case 2:
+                        testePadrao(configs);
+                }
+                
                 break;
-            case 3: // Configs
+            case 3: // configs
                 menu_checkbox(configs, 4, "Configuracoes");
                 break;
             case 4:
