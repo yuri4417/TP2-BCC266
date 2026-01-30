@@ -1,33 +1,28 @@
- CC = gcc
-CFLAGS = -Wall -Wextra -g
+EXEC = exe
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror -Iinclude -g 
 LIBS = -lncurses
 
-OBJS = main.o menu.o utils.o cpu.o ram.o MMU.o tabela.o
+SRC_DIR = src
+OBJ_DIR = obj
 
-exe: $(OBJS)
-	$(CC) $(CFLAGS) -o exe $(OBJS) $(LIBS)
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
 
-main.o: main.c menu.h
-	$(CC) $(CFLAGS) -c main.c
+all: $(EXEC)
 
-menu.o: menu.c menu.h
-	$(CC) $(CFLAGS) -c menu.c
+$(EXEC): $(OBJS)
+	$(CC) $(OBJS) -o $@ $(LIBS)
 
-utils.o: utils.c utils.h structs.h
-	$(CC) $(CFLAGS) -c utils.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(OBJ_DIR)
+	@echo "Compilando: $<"
+	$(CC) $(CFLAGS) -c $< -o $@
 
-cpu.o: cpu.c cpu.h structs.h
-	$(CC) $(CFLAGS) -c cpu.c
 
-ram.o: ram.c ram.h structs.h
-	$(CC) $(CFLAGS) -c ram.c
-
-MMU.o: MMU.c MMU.h structs.h
-	$(CC) $(CFLAGS) -c MMU.c
-	
-tabela.: tabela.c tabela.h structs.h
-	$(CC) $(CFLAGS) -c tabela.c
-
-.PHONY: clean
 clean:
-	rm -f *.o exe
+	rm -rf $(OBJ_DIR) $(EXEC)
+	
+run: all
+	./$(EXEC)
+.PHONY: all clean run

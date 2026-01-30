@@ -7,9 +7,6 @@
 #include "structs.h"
 #include "cores.h"
 #include "tabela.h"
-void tela_configs(ConfigItem *configs, char* text, int n) {
-    menu_checkbox(configs, n, text);
-}
 // Função para rodar a bateria de testes 
 /*void testePadrao(ConfigItem *configs) {
     // Dados da tabela 
@@ -46,19 +43,18 @@ void tela_configs(ConfigItem *configs, char* text, int n) {
 }
 */
 int main() {
-    srand(time(NULL));
-    
+    srand(99);
     BenchMetrics tabela[50];
     ConfigItem configs[] = {
         {"WriteBuffer",                    0, 0},
         {"LRU Insertion Policy (LIP)",     1, 0},
-        {"Modo Escuro",                    0, 0},
+        {"RRIP Policy",                    0, 0},
         {"SALVAR E VOLTAR",                0, 1} 
     };
 
     menu_init();
     int rodando = 1;
-    char *opcoes_principal[] = {"Iniciar Benchmark Manual", "Opções de tabelas", "Configuracoes", "Sair"};
+    char *opcoes_principal[] = {"Benchmark Unico", "Configuracoes", "Tabelas", "Sair"};
     int qtdSalva = 0;
     while(rodando) {
         system("clear");
@@ -73,10 +69,12 @@ int main() {
                 salvaTabela(&qtdSalva, tabela, m);
                 //mostrar_relatorio(&m);
                 break;
-                
-            case 2: // M1 - M5 automático
-                char *opcoesSubMenu []= {"Iniciar tabelas salvas", "Tabelas padrões"};
-                int opcao = menu_run(opcoesSubMenu, 2, "Opções de tabelas");
+            case 2: // configs
+                menu_checkbox(configs, 4, "Configuracoes");
+                break;
+            case 3: // Bancada Padrão
+                char *opcoesSubMenu []= {"Tabelas Locais", "Tabelas Padrao (M1 - M5)"};
+                int opcao = menu_run(opcoesSubMenu, 2, "Opcoes de tabelas");
                 switch(opcao)
                 {
                     case 1:
@@ -85,10 +83,6 @@ int main() {
                     case 2:
                         testePadrao(configs);
                 }
-                
-                break;
-            case 3: // configs
-                menu_checkbox(configs, 4, "Configuracoes");
                 break;
             case 4:
                 rodando = 0;

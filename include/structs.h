@@ -4,6 +4,25 @@
 
 #include <stdbool.h>
 
+//Custos hipoteticos conforme a hierarquia 
+#define CUSTO_L1 10
+#define CUSTO_L2 30
+#define CUSTO_L3 100
+#define CUSTO_RAM 600
+
+#define POL_LRU 0
+#define POL_LIP 1
+#define POL_RRIP 2
+
+
+
+#define ID_BUFFER 0
+#define ID_LIP 1
+#define ID_RRIP 2
+
+
+
+
 typedef struct { 
     long int relogio;
     long qtdStalls;
@@ -11,22 +30,18 @@ typedef struct {
     int hitsL1, missesL1;
     int hitsL2, missesL2;
     int hitsL3, missesL3;
-    
-    bool LIP;
 
+    char policy[5];
 
     int N_PROB;
     int N_FOR;
 } BenchMetrics;
-
-
 
 typedef struct {
     char *texto;
     int ativo;
     int flagBotao;    // 0 = Checkbox, 1 = Botão
 } ConfigItem;
-
 
 typedef struct {
     int palavras[4];
@@ -36,7 +51,6 @@ typedef struct {
     bool preenchido;
     bool alterado;
 
-    // int cacheHit;
 } LinhaCache;
 
 typedef struct {
@@ -59,9 +73,6 @@ typedef struct {
     Endereco add2;
     Endereco add3;
 } Instrucao;
-
-
-
 
 typedef struct {
     int endBloco;

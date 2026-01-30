@@ -22,7 +22,7 @@ int selecionarProbabilidade();
 int selecionarNFor();
 void inicializarMetricas(BenchMetrics *m);
 
-void exibirInfoGeral(BenchMetrics *m, ConfigItem *configs) {
+void exibirInfoGeral(BenchMetrics *m, ConfigItem *configs) { // informações se a o writebuffer, lip estão ativos, numero de instruções, tamanho do for
     
     printf("\n");
     printf(TAB_TL H120 TAB_TR "\n");
@@ -30,13 +30,13 @@ void exibirInfoGeral(BenchMetrics *m, ConfigItem *configs) {
     printf(TAB_ML H120 TAB_MR "\n");
     printf(TAB_VER " %-18s%-10d KB %87s" TAB_VER "\n", "RAM Total:", m->tamRAM, "");
     
-    if (configs[0].ativo) {
+    if (configs[ID_BUFFER].ativo) {
         printf(TAB_VER " %-18s%s%94s" TAB_VER "\n", "Write Buffer:", GREEN("ATIVADO"), "");
     } else {
         printf(TAB_VER " %-18s%s%91s" TAB_VER "\n", "Write Buffer:", RED("DESATIVADO"), "");
     }
     
-    if (configs[1].ativo) {
+    if (configs[ID_LIP].ativo) {
         printf(TAB_VER " %-18s%s%94s" TAB_VER "\n", "Politica LIP:", GREEN("ATIVADO"), "");
     } else {
         printf(TAB_VER " %-18s%s%91s" TAB_VER "\n", "Politica LIP:", RED("DESATIVADO"), "");
@@ -44,9 +44,9 @@ void exibirInfoGeral(BenchMetrics *m, ConfigItem *configs) {
 
     printf(TAB_VER " %-18s%-3d %% %95s" TAB_VER "\n", "Prob. Repeticao:", m->N_PROB, "");
     printf(TAB_VER " %-18s%-10d%91s" TAB_VER "\n", "Instr. p/ Loop:", m->N_FOR, "");
-    printf(TAB_VER " %-18s%-10ld%91s" TAB_VER "\n", "Total Stalls:", m->qtdStalls, "");
     printf(TAB_BL H120 TAB_BR "\n\n");
 }
+
 void cabecalho() {
     printf(TAB_TL H3 TAB_TJ H6 TAB_TJ H6 TAB_TJ H6);
     printf(TAB_TJ H12 TAB_TJ H12 TAB_TJ H12);   // L1
@@ -67,14 +67,14 @@ void cabecalho() {
     printf(TAB_MJ H12 TAB_MJ H20 TAB_MR "\n");
 }
 
-void imprimirLinha(int id, BenchMetrics *m) {
+void imprimirLinha(int id, BenchMetrics *m) { // vai imprimir os dados de cada configuração das caches, hits, miss, acesso na ram. 
     long totalAcessos = m->hitsL1 + m->missesL1;
     
     float pL1 = totalAcessos ? (float)m->hitsL1 * 100.0 / totalAcessos : 0.0;
     long tL2 = m->hitsL2 + m->missesL2;
-    float pL2 = tL2 ? (float)m->hitsL2 * 100.0 / tL2 : 0.0;
+    float pL2 = tL2 ? (float)m->hitsL2 * 100.0 / totalAcessos : 0.0;
     long tL3 = m->hitsL3 + m->missesL3;
-    float pL3 = tL3 ? (float)m->hitsL3 * 100.0 / tL3 : 0.0;
+    float pL3 = tL3 ? (float)m->hitsL3 * 100.0 / totalAcessos : 0.0;
     
     float taxaRAM = totalAcessos ? ((float)m->missesL3 / totalAcessos) * 100.0 : 0.0;
 
@@ -85,7 +85,7 @@ void imprimirLinha(int id, BenchMetrics *m) {
     printf(TAB_VER " %9.1f%% " TAB_VER " %18ld " TAB_VER "\n",taxaRAM, m->relogio);
 }
 
-void rodape() {
+void rodape() { // imprime a parte de baixo da tabela, "fecha a tabela"
     printf(TAB_BL H3 TAB_BJ H6 TAB_BJ H6 TAB_BJ H6);
     printf(TAB_BJ H12 TAB_BJ H12 TAB_BJ H12);
     printf(TAB_BJ H12 TAB_BJ H12 TAB_BJ H12);
@@ -93,7 +93,7 @@ void rodape() {
     printf(TAB_BJ H12 TAB_BJ H20 TAB_BR "\n");
 }
 
-void testePadrao(ConfigItem *configs) {
+void testePadrao(ConfigItem *configs) { // vai inicializar o tamanho das caches com a tabela do pdf, e vai selecionar a probabilidade e o tamanho das instruções
     endwin();
     setbuf(stdout, NULL);
     system("clear"); 
@@ -126,7 +126,7 @@ void testePadrao(ConfigItem *configs) {
         r->tamRAM = 1000; 
         r->N_PROB = prob; 
         r->N_FOR = nFor;
-        r->tamWriteBuffer = configs[0].ativo ? 4 : -1;
+        r->tamWriteBuffer = configs[ID_BUFFER].ativo ? 4 : -1;
 
         CacheBenchmark(r, configs);
         totalizador.qtdStalls += r->qtdStalls;
@@ -158,7 +158,7 @@ void testePadrao(ConfigItem *configs) {
     refresh();
 }
 
-void salvaTabela(int *qtdSalva, BenchMetrics *tabelaSalva, BenchMetrics m )
+void salvaTabela(int *qtdSalva, BenchMetrics *tabelaSalva, BenchMetrics m ) //
 {
     printf("\n" YELLOW("Deseja salvar esse resultado na tabela? [S/N]: ") " ");
     char resp = tolower(getchar()); 
@@ -166,11 +166,11 @@ void salvaTabela(int *qtdSalva, BenchMetrics *tabelaSalva, BenchMetrics m )
         int c; 
         while ((c = getchar()) != '\n' && c != EOF);
     }
-    if (resp == 's') {
+    if (resp == 's') { // Verifica se o usuário quer salvar a tabela, se sim passa copia os dados para o vetor de tabela salva
             if ((*qtdSalva) < 50) {
                 tabelaSalva[(*qtdSalva)] = m; // Copia os dados para o array
                 (*qtdSalva)++;
-                printf(GREEN("Resultado salvo com sucesso! ID: %d") "\n", (*qtdSalva));
+                printf(GREEN("Resultado salvo com sucesso! ID: M%d") "\n", (*qtdSalva));
             } else 
                 printf(RED("Memoria cheia! Nao e possivel salvar mais.") "\n");
             
@@ -179,10 +179,10 @@ void salvaTabela(int *qtdSalva, BenchMetrics *tabelaSalva, BenchMetrics m )
     }
 }
 
-void exibirRelatorioIndividual(BenchMetrics *m, ConfigItem *configs) {
-    endwin();
-    setbuf(stdout, NULL);
-    system("clear");
+void exibirRelatorioIndividual(BenchMetrics *m, ConfigItem *configs) { // apenas para quando o usuário selecionar a opção de tabela manual
+    endwin();// desativa o ncurses
+    setbuf(stdout, NULL); // limpa o buffer 
+    system("clear"); // limpa o terminal
     exibirInfoGeral(m, configs);
     cabecalho();
     imprimirLinha(1, m);
@@ -192,7 +192,7 @@ void exibirRelatorioIndividual(BenchMetrics *m, ConfigItem *configs) {
     getchar();
 }
 
-void inicializarMetricas(BenchMetrics *m) {
+void inicializarMetricas(BenchMetrics *m) { // para evitar lixo de memória
     m->hitsL1 = 0; m->missesL1 = 0;
     m->hitsL2 = 0; m->missesL2 = 0;
     m->hitsL3 = 0; m->missesL3 = 0;
@@ -203,7 +203,7 @@ void inicializarMetricas(BenchMetrics *m) {
     m->tamRAM = 0;
 }
 
-int selecionarProbabilidade() {
+int selecionarProbabilidade() { // leitura da probabilidade
     system("clear");
     printf("Escolha a Probabilidade de Repeticao:\n");
     printf("1 - 50%%\n");
@@ -224,7 +224,7 @@ int selecionarProbabilidade() {
     }
 }
 
-int selecionarNFor() {
+int selecionarNFor() { //leitura do número de instruções 
     system("clear");
     printf("\n" BOLD(YELLOW("Tamanho do for ")) "\n\n");  
     printf("1 - 5 inst.\n");

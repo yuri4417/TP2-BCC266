@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "cpu.h"
 #include "ram.h"
@@ -20,7 +21,6 @@ Instrucao* gerarInstrucoes(int N_INST, int N_MEM, int N_PROB, int N_FOR, int N_O
     }
 
     Instrucao* padrao_repeticao = (Instrucao*) malloc(N_FOR * sizeof(Instrucao));
-
     for (int i = 0; i < N_FOR; i++) {
         padrao_repeticao[i].opcode = rand() % N_OPCODE;
 
@@ -69,24 +69,24 @@ void setupBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     metrics->tamL1 = menu_valor("Tamanho da Cache L1 (em blocos)");
     metrics->tamL2 = menu_valor("Tamanho da Cache L2 (em blocos)");
     metrics->tamL3 = menu_valor("Tamanho da Cache L3 (em blocos)");
-    if (configs[0].ativo)
+    if (configs[ID_BUFFER].ativo)
         metrics->tamWriteBuffer = menu_valor("Tamanho do WriteBuffer");
 
     metrics->relogio = 0;
     metrics->tamRAM = 1000;
 
-    metrics->N_PROB = menu_valor("Probabilidade de Repeticao (%%)");
+    metrics->N_PROB = menu_valor("Probabilidade de Repeticao");
     metrics->N_FOR = menu_valor("Numero de Instrucoes na Repeticao");
 }
 
 void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     Cache *L1 = criaCache(metrics->tamL1); Cache *L2 = criaCache(metrics->tamL2); Cache *L3 = criaCache(metrics->tamL3);
     LinhaCache *RAM = criaRAM_aleatoria(metrics->tamRAM);
-    Instrucao *programa = gerarInstrucoes(10000, metrics->tamRAM, metrics->N_PROB, metrics->N_FOR, 2, 3);
+    Instrucao *programa = gerarInstrucoes(10000, metrics->tamRAM, metrics->N_PROB, metrics->N_FOR, 2, 4);
 
 
     WriteBuffer buffer;
-    if (configs[0].ativo) {
+    if (configs[ID_BUFFER].ativo) {
         buffer.fila = (ItemBuffer*) malloc(metrics->tamWriteBuffer * sizeof(ItemBuffer));
         buffer.inicio = 0;
         buffer.qtdStalls = 0;
@@ -99,12 +99,12 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     else
         metrics->tamWriteBuffer = -1;
     
-
-
-    if (configs[1].ativo)
-        metrics->LIP = true;
+    if (configs[ID_LIP].ativo) 
+        strcpy(metrics->policy, "LIP");
+    else if (configs[ID_RRIP].ativo)
+        strcpy(metrics->policy, "RRIP");
     else
-        metrics->LIP = false;
+        strcpy(metrics->policy, "LRU");
 
     cpu(L1, L2, L3, RAM, programa, &metrics->relogio, &buffer, configs);
 
@@ -113,16 +113,15 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     metrics->hitsL2 = L2->hit; metrics->missesL2 = L2->miss;
     metrics->hitsL3 = L3->hit; metrics->missesL3 = L3->miss;
 
-    if (configs[0].ativo) {
+    if (configs[ID_BUFFER].ativo) 
         metrics->qtdStalls = buffer.qtdStalls;
-    } else {
+    else 
         metrics->qtdStalls = 0;
-    }
 
     destroiCache(L1); destroiCache(L2); destroiCache(L3); 
     liberaRAM(RAM);
     free(programa);
-    if (configs[0].ativo)
+    if (configs[ID_BUFFER].ativo)
         free(buffer.fila);
 }
 

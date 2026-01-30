@@ -1,8 +1,9 @@
-#include "menu.h"
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h> 
 
+#include "menu.h"
+#include "structs.h"
 
 #define COR_VERDE 1
 #define COR_VERMELHO 2
@@ -39,9 +40,8 @@ void desenhar_opcoes(int highlight, char *opcoes[], int n_opcoes, char *titulo) 
             attron(A_REVERSE);
             mvprintw(y, x, "%s", opcoes[i]);
             attroff(A_REVERSE);
-        } else {
+        } else 
             mvprintw(y, x, "%s", opcoes[i]);
-        }
     }
     refresh();
 }
@@ -121,6 +121,16 @@ void menu_checkbox(ConfigItem *itens, int n_itens, char *titulo) {
             case 10: // Enter
                 if (itens[highlight-1].flagBotao) return;
                 itens[highlight-1].ativo = !itens[highlight-1].ativo;
+                
+                if ((highlight-1) == 1 && itens[1].ativo) {
+                    itens[2].ativo = 0; 
+                }
+                
+                if ((highlight-1) == 2 && itens[2].ativo) {
+                    itens[1].ativo = 0; 
+                }
+
+
                 break;
             case KEY_F(10): return;
         }
@@ -154,117 +164,117 @@ int menu_valor(char *mensagem) {
     return atoi(input);
 }
 
-int mostrar_relatorio(BenchMetrics *m) {
-    clear();
-    box(stdscr, 0, 0);
+// int mostrar_relatorio(BenchMetrics *m) {
+//     clear();
+//     box(stdscr, 0, 0);
 
-    if (has_colors()) {
-        start_color();
-        init_pair(COR_VERDE, COLOR_GREEN, COLOR_BLACK);
-        init_pair(COR_VERMELHO, COLOR_RED, COLOR_BLACK);
-        init_pair(COR_AMARELO, COLOR_YELLOW, COLOR_BLACK);
-        init_pair(COR_TITULO, COLOR_CYAN, COLOR_BLACK);
-    }
+//     if (has_colors()) {
+//         start_color();
+//         init_pair(COR_VERDE, COLOR_GREEN, COLOR_BLACK);
+//         init_pair(COR_VERMELHO, COLOR_RED, COLOR_BLACK);
+//         init_pair(COR_AMARELO, COLOR_YELLOW, COLOR_BLACK);
+//         init_pair(COR_TITULO, COLOR_CYAN, COLOR_BLACK);
+//     }
 
-    long tL1 = m->hitsL1 + m->missesL1;
-    long tL2 = m->hitsL2 + m->missesL2;
-    long tL3 = m->hitsL3 + m->missesL3;
+//     long tL1 = m->hitsL1 + m->missesL1;
+//     long tL2 = m->hitsL2 + m->missesL2;
+//     long tL3 = m->hitsL3 + m->missesL3;
 
-    float pL1 = tL1 ? (float)m->hitsL1/tL1 * 100 : 0;
-    float pL2 = tL2 ? (float)m->hitsL2/tL2 * 100 : 0;
-    float pL3 = tL3 ? (float)m->hitsL3/tL3 * 100 : 0;
+//     float pL1 = tL1 ? (float)m->hitsL1/tL1 * 100 : 0;
+//     float pL2 = tL2 ? (float)m->hitsL2/tL2 * 100 : 0;
+//     float pL3 = tL3 ? (float)m->hitsL3/tL3 * 100 : 0;
 
-    attron(A_BOLD | COLOR_PAIR(COR_TITULO));
-    mvprintw(1, 2, "=== RELATORIO DE BENCHMARK ===");
-    attroff(A_BOLD | COLOR_PAIR(COR_TITULO));
+//     attron(A_BOLD | COLOR_PAIR(COR_TITULO));
+//     mvprintw(1, 2, "=== RELATORIO DE BENCHMARK ===");
+//     attroff(A_BOLD | COLOR_PAIR(COR_TITULO));
 
-    mvhline(2, 1, ACS_HLINE, getmaxx(stdscr)-2); 
-
-
-    attron(A_BOLD);
-    mvprintw(3, 2, "CONFIGURACAO:");
-    attroff(A_BOLD);
-
-    mvprintw(4, 4, "L1: %d | L2: %d | L3: %d (blocos)", m->tamL1, m->tamL2, m->tamL3);
-    mvprintw(5, 4, "RAM: %d blocos", m->tamRAM);
+//     mvhline(2, 1, ACS_HLINE, getmaxx(stdscr)-2); 
 
 
-    mvprintw(6, 4, "Buffer de Escrita: ");
-    if (m->tamWriteBuffer != -1) {
-        attron(COLOR_PAIR(COR_VERDE) | A_BOLD);
-        printw("ATIVADO (Tam: %d)", m->tamWriteBuffer);
-        attroff(COLOR_PAIR(COR_VERDE) | A_BOLD);
-    } else {
-        attron(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
-        printw("DESATIVADO");
-        attroff(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
-    }
+//     attron(A_BOLD);
+//     mvprintw(3, 2, "CONFIGURACAO:");
+//     attroff(A_BOLD);
 
-    mvprintw(7, 4, "LRU Insertion Policy (LIP): ");
-    if (m->LIP) {
-        attron(COLOR_PAIR(COR_VERDE) | A_BOLD);
-        printw("ATIVADA");
-        attroff(COLOR_PAIR(COR_VERDE) | A_BOLD);
-    } else {
-        attron(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
-        printw("DESATIVADA");
-        attroff(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
-    }
-
-    mvhline(8, 1, ACS_HLINE, getmaxx(stdscr)-2);
+//     mvprintw(4, 4, "L1: %d | L2: %d | L3: %d (blocos)", m->tamL1, m->tamL2, m->tamL3);
+//     mvprintw(5, 4, "RAM: %d blocos", m->tamRAM);
 
 
-    attron(A_BOLD);
-    mvprintw(9, 2, "ESTATISTICAS DE CACHE:");
-    attroff(A_BOLD);
+//     mvprintw(6, 4, "Buffer de Escrita: ");
+//     if (m->tamWriteBuffer != -1) {
+//         attron(COLOR_PAIR(COR_VERDE) | A_BOLD);
+//         printw("ATIVADO (Tam: %d)", m->tamWriteBuffer);
+//         attroff(COLOR_PAIR(COR_VERDE) | A_BOLD);
+//     } else {
+//         attron(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
+//         printw("DESATIVADO");
+//         attroff(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
+//     }
 
-    mvprintw(10, 4,  "L1 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL1, pL1, m->missesL1);
-    mvprintw(11, 4, "L2 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL2, pL2, m->missesL2);
-    mvprintw(12, 4, "L3 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL3, pL3, m->missesL3);
+//     mvprintw(7, 4, "LRU Insertion Policy (LIP): ");
+//     if (m->LIP) {
+//         attron(COLOR_PAIR(COR_VERDE) | A_BOLD);
+//         printw("ATIVADA");
+//         attroff(COLOR_PAIR(COR_VERDE) | A_BOLD);
+//     } else {
+//         attron(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
+//         printw("DESATIVADA");
+//         attroff(COLOR_PAIR(COR_VERMELHO) | A_BOLD);
+//     }
+
+//     mvhline(8, 1, ACS_HLINE, getmaxx(stdscr)-2);
+
+
+//     attron(A_BOLD);
+//     mvprintw(9, 2, "ESTATISTICAS DE CACHE:");
+//     attroff(A_BOLD);
+
+//     mvprintw(10, 4,  "L1 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL1, pL1, m->missesL1);
+//     mvprintw(11, 4, "L2 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL2, pL2, m->missesL2);
+//     mvprintw(12, 4, "L3 Hits: %-8d (%5.1f%%) | Misses: %-8d", m->hitsL3, pL3, m->missesL3);
     
-    mvprintw(13, 4, "Acessos a RAM: %d", m->missesL3);
-    mvhline(14, 1, ACS_HLINE, getmaxx(stdscr)-2);
+//     mvprintw(13, 4, "Acessos a RAM: %d", m->missesL3);
+//     mvhline(14, 1, ACS_HLINE, getmaxx(stdscr)-2);
 
 
-    mvprintw(15, 4, "CPU Stalls: ");
+//     mvprintw(15, 4, "CPU Stalls: ");
     
-    if (m->tamWriteBuffer != -1) {
-        if (m->qtdStalls > 0) {
-            attron(COLOR_PAIR(COR_AMARELO) | A_BLINK); 
-            printw("%ld Stalls de CPU", m->qtdStalls);
-            attroff(COLOR_PAIR(COR_AMARELO) | A_BLINK);
-        } else {
-            attron(COLOR_PAIR(COR_VERDE));
-            printw("Nenhum Stall de CPU identificado");
-            attroff(COLOR_PAIR(COR_VERDE));
-        }
-    } else
-        printw("Buffer desligado");
+//     if (m->tamWriteBuffer != -1) {
+//         if (m->qtdStalls > 0) {
+//             attron(COLOR_PAIR(COR_AMARELO) | A_BLINK); 
+//             printw("%ld Stalls de CPU", m->qtdStalls);
+//             attroff(COLOR_PAIR(COR_AMARELO) | A_BLINK);
+//         } else {
+//             attron(COLOR_PAIR(COR_VERDE));
+//             printw("Nenhum Stall de CPU identificado");
+//             attroff(COLOR_PAIR(COR_VERDE));
+//         }
+//     } else
+//         printw("Buffer desligado");
 
     
 
-    mvhline(16, 1, ACS_HLINE, getmaxx(stdscr)-2);
+//     mvhline(16, 1, ACS_HLINE, getmaxx(stdscr)-2);
 
 
-    attron(A_REVERSE | A_BOLD);
-    mvprintw(18, 2, " TEMPO TOTAL: %ld ciclos ", m->relogio);
-    attroff(A_REVERSE | A_BOLD);
+//     attron(A_REVERSE | A_BOLD);
+//     mvprintw(18, 2, " TEMPO TOTAL: %ld ciclos ", m->relogio);
+//     attroff(A_REVERSE | A_BOLD);
 
 
-    mvprintw(21, 2, "Deseja salvar este resultado na Tabela? (S/N)");
-    refresh();
+//     mvprintw(21, 2, "Deseja salvar este resultado na Tabela? (S/N)");
+//     refresh();
 
 
-    while(1) {
-        int c = tolower(getch()); 
-        if (c == 's')   
-            return 1;
-        if (c == 'n' || c == 27) 
-            return 0; // 27 = ESC
+//     while(1) {
+//         int c = tolower(getch()); 
+//         if (c == 's')   
+//             return 1;
+//         if (c == 'n' || c == 27) 
+//             return 0; // 27 = ESC
         
-        attron(COLOR_PAIR(COR_VERMELHO));
-        mvprintw(22, 2, "Opcao invalida! Use S ou N.");
-        attroff(COLOR_PAIR(COR_VERMELHO));
-        refresh();
-    }
-}
+//         attron(COLOR_PAIR(COR_VERMELHO));
+//         mvprintw(22, 2, "Opcao invalida! Use S ou N.");
+//         attroff(COLOR_PAIR(COR_VERMELHO));
+//         refresh();
+//     }
+// }

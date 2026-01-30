@@ -1,0 +1,16 @@
+{
+   ignore_ncurses_tparm_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   fun:tparm_setup
+}
+{
+   ignore_ncurses_newterm_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   fun:newterm
+}
