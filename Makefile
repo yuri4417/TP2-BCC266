@@ -1,6 +1,6 @@
 EXEC = exe
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -Iinclude -g 
+CFLAGS = -Wall -Wextra -Iinclude -g 
 LIBS = -lncurses
 
 SRC_DIR = src

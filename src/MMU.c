@@ -39,26 +39,32 @@ void destroiCache(Cache* c) {
 }
 
 int getPolicy(ConfigItem *configs) {
-    if (configs[ID_RRIP].ativo)
-        return POL_RRIP;
+    if (configs[ID_LFU].ativo)
+        return POL_LFU;
     if (configs[ID_LIP].ativo)
         return POL_LIP;
-
+    if (configs[ID_RRIP].ativo) 
+        return POL_RRIP;
     return POL_LRU; 
 }
 
 long atribuiPrioridade(ConfigItem *configs, long *relogioAtual) {
     int policy = getPolicy(configs);
+    if (policy == POL_LIP)
+        return 0;
+    if (policy == POL_LFU)
+        return 1;
     if (policy == POL_RRIP)
         return 2;
-    else if (policy == POL_LIP)
-        return 0;
 
     return *relogioAtual;
 }
 
 void buffer_add(LinhaCache *RAM, WriteBuffer *wb, int endBloco, LinhaCache linha, long *relogio);
 void salvaRAM(Cache* L3, int indice, LinhaCache *RAM, WriteBuffer *buffer, int ConfigBuffer, long int *relogio);
+
+
+
 
 int buscarCache(Cache* c, int endRAM, long int relogioAtual, ConfigItem *configs) {
     int indiceBloco = endRAM % c->nroConjuntos;
@@ -68,9 +74,11 @@ int buscarCache(Cache* c, int endRAM, long int relogioAtual, ConfigItem *configs
         if (c->memoria[i].preenchido && c->memoria[i].endBloco == endRAM) {
             c->hit++;
             
-            if (configs[ID_RRIP].ativo) 
-                c->memoria[i].prioridade = 0; 
-            else 
+            if (configs[ID_LFU].ativo) 
+                c->memoria[i].prioridade++; 
+            else if (configs[ID_RRIP].ativo)
+                c->memoria[i].prioridade = 0;
+            else
                 c->memoria[i].prioridade = relogioAtual; 
             
             return i;
@@ -82,40 +90,39 @@ int buscarCache(Cache* c, int endRAM, long int relogioAtual, ConfigItem *configs
 }
 
 int buscaDadoAntigo(Cache* c, int endRAM, int policy) {
-    
     int posConjunto = endRAM % c->nroConjuntos;
     int inicioBloco = posConjunto * 4;
-    if (policy == POL_LRU || policy == POL_LIP) {
-        int posMenorPrioridade = -1;
-        long int menorPrioridade = LONG_MAX;
+
+    // busca por linha vazia primeiro
+    for (int i = inicioBloco; i < inicioBloco + 4; i++) 
+        if (!c->memoria[i].preenchido)
+            return i;
     
-        for (int i = inicioBloco; i < inicioBloco + 4; i++) {
-            if (!c->memoria[i].preenchido) // se não está preenchido significa que tem espaço e não precisa remover algo
-                return i;
-            
-            if (c->memoria[i].prioridade < menorPrioridade) {// vai percorrer toda cache e acessar o dado que tem o menor valor no relogio
-                menorPrioridade = c->memoria[i].prioridade;
-                posMenorPrioridade = i;
-            }
-        }
-    
-        return posMenorPrioridade;
-    }
-    else if (policy == POL_RRIP) {
-        for (int i = inicioBloco; i < inicioBloco + 4; i++) 
-            if (!c->memoria[i].preenchido)
-                return i;
-        
-        while (1) {
+    if (policy == POL_RRIP) {
+        while (1) { 
             for (int i = inicioBloco; i < inicioBloco + 4; i++) 
                 if (c->memoria[i].prioridade >= 3) 
                     return i;
-                
-            for (int i = inicioBloco; i < inicioBloco + 4; i++) 
-                c->memoria[i].prioridade++;
+
+            for (int i = inicioBloco; i < inicioBloco + 4; i++)
+                if (c->memoria[i].prioridade < 3)
+                    c->memoria[i].prioridade++;
         }
     }
-    return -1;
+
+    // LRU, LIP, LFU    
+    int posMenorPrioridade = -1;
+    long int menorPrioridade = LONG_MAX;
+
+    for (int i = inicioBloco; i < inicioBloco + 4; i++) {  
+        if (c->memoria[i].prioridade < menorPrioridade) {// vai percorrer toda cache e acessar o dado que tem o menor valor no relogio
+            menorPrioridade = c->memoria[i].prioridade;
+            posMenorPrioridade = i;
+        }
+    }
+
+    return posMenorPrioridade;
+
 }
 
 int transfereCache(Cache *cacheOrigem, Cache *cacheDestino, int indiceOrigem, int endRAM, long int *relogio, LinhaCache *RAM, WriteBuffer *buffer, ConfigItem *configs, Cache *cacheInferior) {
@@ -152,6 +159,9 @@ int transfereCache(Cache *cacheOrigem, Cache *cacheDestino, int indiceOrigem, in
 
     return posDestino;
 }
+
+
+
 
 void buffer_add(LinhaCache *RAM, WriteBuffer *wb, int endBloco, LinhaCache linha, long *relogio) {
     // Calcula o tempo passado e os stores feitos
@@ -211,8 +221,7 @@ void salvaRAM(Cache* L3, int indice, LinhaCache *RAM, WriteBuffer *buffer, int C
         return;
     
     
-    if(L3->memoria[indice].preenchido && L3->memoria[indice].alterado)
-    {
+    if(L3->memoria[indice].preenchido && L3->memoria[indice].alterado) {
         int endRAM = L3->memoria[indice].endBloco;
 
         if (ConfigBuffer)
@@ -221,6 +230,7 @@ void salvaRAM(Cache* L3, int indice, LinhaCache *RAM, WriteBuffer *buffer, int C
             RAM[endRAM] = L3->memoria[indice];
             *relogio += CUSTO_RAM;
         }
+        L3->memoria[indice].preenchido = false;
         L3->memoria[indice].alterado = false;
     }      
 }
@@ -273,6 +283,10 @@ int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM, WriteBuffer *buffer, Conf
     return indiceAntigo;
 }
  
+
+
+
+
 int moveL1(Endereco add, Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *buffer, long int *relogio, ConfigItem *configs) { // vai buscar o conteúdo nas caches ou na ram, e onde encontrar vai transferir pra l1
 
     *relogio += CUSTO_L1;
@@ -316,7 +330,13 @@ void MMU_Write(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *bu
         L1->memoria[posL1].palavras[endpalavra] = valor;
         L1->memoria[posL1].alterado = true;
         L1->memoria[posL1].preenchido = true;
-        L1->memoria[posL1].prioridade = *relogio;
+        
+        if (configs[ID_LFU].ativo) 
+            L1->memoria[posL1].prioridade++;  
+        else if (configs[ID_RRIP].ativo)
+            L1->memoria[posL1].prioridade = 0; 
+        else 
+            L1->memoria[posL1].prioridade = *relogio; // LRU/LIP
     }
     else
         exit(-1);

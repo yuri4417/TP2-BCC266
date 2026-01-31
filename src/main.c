@@ -42,13 +42,70 @@
     }
 }
 */
+
+void testeRapido(ConfigItem *configs) {
+    BenchMetrics m;
+    
+    menu_close(); 
+
+
+    m.tamL1 = 32; 
+    m.tamL2 = 64;
+    m.tamL3 = 256;
+    m.tamRAM = TAM_RAM_DEFAULT;
+    
+    m.N_PROB = 90;    
+    m.N_FOR = 5;  
+    m.tamWriteBuffer = 4;
+
+    configs[ID_MULT].ativo = 0; 
+
+    printf("\n" BOLD(CYAN("=== Comparacão de Políticas  (L1=%d, MULTI=ON) ===")) "\n", m.tamL1);
+
+    configs[ID_LIP].ativo = 0; 
+    configs[ID_LFU].ativo = 0; 
+    configs[ID_RRIP].ativo = 0;
+    
+    CacheBenchmark(&m, configs);
+    printf("LRU  -> Hit L1: %5.1f%% (Tempo: %ld)\n", (float)m.hitsL1*100/(m.hitsL1+m.missesL1), m.relogio);
+
+    configs[ID_LIP].ativo = 1; 
+    configs[ID_LFU].ativo = 0; 
+    configs[ID_RRIP].ativo = 0;
+    
+    CacheBenchmark(&m, configs);
+    printf("LIP  -> Hit L1: %5.1f%% (Tempo: %ld)\n", (float)m.hitsL1*100/(m.hitsL1+m.missesL1), m.relogio);
+
+    configs[ID_LIP].ativo = 0; 
+    configs[ID_LFU].ativo = 1; 
+    configs[ID_RRIP].ativo = 0;
+    
+    CacheBenchmark(&m, configs);
+    printf("LFU  -> Hit L1: %5.1f%% (Tempo: %ld)\n", (float)m.hitsL1*100/(m.hitsL1+m.missesL1), m.relogio);
+
+    configs[ID_LIP].ativo = 0; 
+    configs[ID_LFU].ativo = 0; 
+    configs[ID_RRIP].ativo = 1;
+    
+    CacheBenchmark(&m, configs);
+    printf("RRIP -> Hit L1: %5.1f%% (Tempo: %ld)\n", (float)m.hitsL1*100/(m.hitsL1+m.missesL1), m.relogio);
+    
+    printf("\n" GREEN("Pressione ENTER para retornar ao menu...") "\n");
+    getchar();
+    menu_init(); 
+}
+
+
+
 int main() {
-    srand(99);
+    srand(RAND);
     BenchMetrics tabela[50];
     ConfigItem configs[] = {
         {"WriteBuffer",                    0, 0},
         {"LRU Insertion Policy (LIP)",     1, 0},
+        {"LFU Policy ",                    0, 0},
         {"RRIP Policy",                    0, 0},
+        {"Gerador Multiplo",               0, 0},
         {"SALVAR E VOLTAR",                0, 1} 
     };
 
@@ -62,15 +119,15 @@ int main() {
 
         switch(escolha) {
             case 1: // Manual
-                BenchMetrics m;
-                setupBenchmark(&m, configs);
-                CacheBenchmark(&m, configs);
-                exibirRelatorioIndividual(&m,configs);
-                salvaTabela(&qtdSalva, tabela, m);
-                //mostrar_relatorio(&m);
+                // BenchMetrics m;
+                // setupBenchmark(&m, configs);
+                // CacheBenchmark(&m, configs);
+                // exibirRelatorioIndividual(&m,configs);
+                // salvaTabela(&qtdSalva, tabela, m);
+                testeRapido(configs);
                 break;
             case 2: // configs
-                menu_checkbox(configs, 4, "Configuracoes");
+                menu_checkbox(configs, 6, "Configuracoes");
                 break;
             case 3: // Bancada Padrão
                 char *opcoesSubMenu []= {"Tabelas Locais", "Tabelas Padrao (M1 - M5)"};
@@ -91,5 +148,6 @@ int main() {
     }
 
     menu_close();
+    system("clear");
     return 0;
 }

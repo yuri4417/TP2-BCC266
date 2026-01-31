@@ -111,7 +111,7 @@ void testePadrao(ConfigItem *configs) { // vai inicializar o tamanho das caches 
     BenchMetrics totalizador;
     inicializarMetricas(&totalizador);
 
-    totalizador.tamRAM = 1000; 
+    totalizador.tamRAM = TAM_RAM_DEFAULT; 
     totalizador.N_PROB = prob; 
     totalizador.N_FOR = nFor;
 
@@ -123,7 +123,7 @@ void testePadrao(ConfigItem *configs) { // vai inicializar o tamanho das caches 
         r->tamL1 = maquinas[i][0]; 
         r->tamL2 = maquinas[i][1]; 
         r->tamL3 = maquinas[i][2];
-        r->tamRAM = 1000; 
+        r->tamRAM = TAM_RAM_DEFAULT; 
         r->N_PROB = prob; 
         r->N_FOR = nFor;
         r->tamWriteBuffer = configs[ID_BUFFER].ativo ? 4 : -1;

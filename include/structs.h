@@ -2,6 +2,7 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
+#include <time.h>
 #include <stdbool.h>
 
 //Custos hipoteticos conforme a hierarquia 
@@ -12,14 +13,17 @@
 
 #define POL_LRU 0
 #define POL_LIP 1
-#define POL_RRIP 2
+#define POL_LFU 2
+#define POL_RRIP 3
 
-
+#define TAM_RAM_DEFAULT 1200
+#define RAND 999999
 
 #define ID_BUFFER 0
 #define ID_LIP 1
-#define ID_RRIP 2
-
+#define ID_LFU 2
+#define ID_RRIP 3  
+#define ID_MULT 4
 
 
 

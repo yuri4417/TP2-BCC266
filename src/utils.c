@@ -9,30 +9,86 @@
 #include "structs.h"
 #include "MMU.h"
 
+Instrucao* criarPadrao(int N_FOR, int N_OPCODE, int INICIO_RAM, int rangeMemoria, int N_WORD) {
+    Instrucao* ptr = (Instrucao*) malloc(N_FOR * sizeof(Instrucao));
+    if (!ptr) 
+        exit(-1);
 
+    for (int i = 0; i < N_FOR; i++) {
+        ptr[i].opcode = rand() % N_OPCODE;
 
+        ptr[i].add1.endBloco = INICIO_RAM + (rand() % rangeMemoria);
+        ptr[i].add1.endPalavra = rand() % N_WORD;
+        
+        ptr[i].add2.endBloco = INICIO_RAM + (rand() % rangeMemoria);
+        ptr[i].add2.endPalavra = rand() % N_WORD;
+        
+        ptr[i].add3.endBloco = INICIO_RAM + (rand() % rangeMemoria);
+        ptr[i].add3.endPalavra = rand() % N_WORD;
+    }
+    return ptr;
+}
+
+Instrucao* geradorMultiplo(int N_INST, int N_PROB, int N_FOR, int N_OPCODE, int N_WORD) {
+    Instrucao* programa = (Instrucao*) malloc((N_INST + 1) * sizeof(Instrucao));
+    if (!programa)
+        exit(-1);
+
+    Instrucao* padraoA = criarPadrao(N_FOR, N_OPCODE, 0, 10, N_WORD);
+    Instrucao* padraoB = criarPadrao(N_FOR, N_OPCODE, 200, 10, N_WORD);
+    Instrucao* padraoC = criarPadrao(N_FOR, N_OPCODE, 400, 80, N_WORD);
+
+    int indiceA = 0, indiceB = 0, indiceC = 0;
+
+    for (int i = 0; i < N_INST; i++) {
+        int random_prob = (rand() % 100) + 1;
+        if (random_prob <= N_PROB) {
+            int escolha = rand() % 3;
+            switch (escolha) {
+                case 0:
+                    programa[i] = padraoA[indiceA];
+                    indiceA = (indiceA + 1) % N_FOR;
+                    break;
+                case 1:
+                    programa[i] = padraoB[indiceB];
+                    indiceB = (indiceB + 1) % N_FOR;
+                    break;
+                case 2:
+                    programa[i] = padraoC[indiceC];
+                    indiceC = (indiceC + 1) % N_FOR;
+                    break;
+            }
+        }
+        else {
+            int endAleatorios = 1000;
+            programa[i].opcode = rand() % N_OPCODE;
+            
+            programa[i].add1.endBloco = endAleatorios + (rand() % 200);
+            programa[i].add1.endPalavra = rand() % N_WORD;
+            
+            programa[i].add2.endBloco = endAleatorios + (rand() % 200);
+            programa[i].add2.endPalavra = rand() % N_WORD;
+            
+            programa[i].add3.endBloco = endAleatorios + (rand() % 200);
+            programa[i].add3.endPalavra = rand() % N_WORD;
+        }
+    }
+
+    free(padraoA);
+    free(padraoB); 
+    free(padraoC);
+
+    programa[N_INST].opcode = -1; // HALT
+    return programa;
+}
 
 Instrucao* gerarInstrucoes(int N_INST, int N_MEM, int N_PROB, int N_FOR, int N_OPCODE, int N_WORD) {
 
     Instrucao* programa = (Instrucao*) malloc((N_INST + 1) * sizeof(Instrucao));
     if (!programa)
-     {
-        exit(1);
-    }
+        exit(-1);
 
-    Instrucao* padrao_repeticao = (Instrucao*) malloc(N_FOR * sizeof(Instrucao));
-    for (int i = 0; i < N_FOR; i++) {
-        padrao_repeticao[i].opcode = rand() % N_OPCODE;
-
-        padrao_repeticao[i].add1.endBloco = rand() % N_MEM;
-        padrao_repeticao[i].add1.endPalavra = rand() % N_WORD;
-
-        padrao_repeticao[i].add2.endBloco = rand() % N_MEM;
-        padrao_repeticao[i].add2.endPalavra = rand() % N_WORD;
-
-        padrao_repeticao[i].add3.endBloco = rand() % N_MEM;
-        padrao_repeticao[i].add3.endPalavra = rand() % N_WORD;
-    }
+    Instrucao* padrao_repeticao = criarPadrao(N_FOR, N_OPCODE, 0, N_MEM, N_WORD);
 
     int i = 0;
     while (i < N_INST) {
@@ -73,16 +129,22 @@ void setupBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
         metrics->tamWriteBuffer = menu_valor("Tamanho do WriteBuffer");
 
     metrics->relogio = 0;
-    metrics->tamRAM = 1000;
+    metrics->tamRAM = TAM_RAM_DEFAULT;
 
     metrics->N_PROB = menu_valor("Probabilidade de Repeticao");
     metrics->N_FOR = menu_valor("Numero de Instrucoes na Repeticao");
 }
 
 void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
+    srand(RAND);
     Cache *L1 = criaCache(metrics->tamL1); Cache *L2 = criaCache(metrics->tamL2); Cache *L3 = criaCache(metrics->tamL3);
     LinhaCache *RAM = criaRAM_aleatoria(metrics->tamRAM);
-    Instrucao *programa = gerarInstrucoes(10000, metrics->tamRAM, metrics->N_PROB, metrics->N_FOR, 2, 4);
+ 
+    Instrucao *programa;
+    if (configs[ID_MULT].ativo)
+        programa = geradorMultiplo(10000, metrics->N_PROB, metrics->N_FOR, 2, 4);
+    else
+        programa = gerarInstrucoes(10000, metrics->tamRAM, metrics->N_PROB, metrics->N_FOR, 2, 4);
 
 
     WriteBuffer buffer;
@@ -101,6 +163,8 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     
     if (configs[ID_LIP].ativo) 
         strcpy(metrics->policy, "LIP");
+    else if (configs[ID_LFU].ativo)
+        strcpy(metrics->policy, "LFU");
     else if (configs[ID_RRIP].ativo)
         strcpy(metrics->policy, "RRIP");
     else
