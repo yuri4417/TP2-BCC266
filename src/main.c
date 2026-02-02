@@ -15,7 +15,7 @@ int main() {
         {"WriteBuffer",                    0, 0},
         {"LRU Insertion Policy (LIP)",     1, 0},
         {"LFU Policy ",                    0, 0},
-        {"SRRIP Policy",                    0, 0},
+        {"SRRIP Policy",                   0, 0},
         {"Gerador Multiplo",               0, 0},
         {"SALVAR E VOLTAR",                0, 1} 
     };

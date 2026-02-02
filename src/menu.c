@@ -54,14 +54,19 @@ int menu_run(char *opcoes[], int n_opcoes, char *titulo) {
         c = getch();
         switch(c) {
             case KEY_UP:
-                if(highlight == 1) highlight = n_opcoes;
-                else --highlight;
+                if(highlight == 1) 
+                    highlight = n_opcoes;
+                else 
+                    --highlight;
                 break;
             case KEY_DOWN:
-                if(highlight == n_opcoes) highlight = 1;
-                else ++highlight;
+                if(highlight == n_opcoes) 
+                    highlight = 1;
+                else 
+                    ++highlight;
                 break;
-            case 10: return highlight;
+            case 10: 
+                return highlight;
             // case KEY_F(10): return -1;
         }
         desenhar_opcoes(highlight, opcoes, n_opcoes, titulo);
@@ -71,15 +76,15 @@ int menu_run(char *opcoes[], int n_opcoes, char *titulo) {
 // Auxiliar para desenhar checkboxes
 void desenhar_structs(int highlight, ConfigItem *itens, int n_itens, char *titulo) {
     int max_y, max_x;
-    getmaxyx(stdscr
-        , max_y, max_x);
+    getmaxyx(stdscr, max_y, max_x);
     erase();
     
     box(stdscr, 0, 0);
     mvprintw(1, (max_x - strlen(titulo)) / 2, "%s", titulo);
 
     int start_y = (max_y - n_itens) / 2;
-    if (start_y < 3) start_y = 3;
+    if (start_y < 3) 
+        start_y = 3;
 
     for(int i = 0; i < n_itens; ++i) {
         int len = strlen(itens[i].texto);
@@ -90,12 +95,16 @@ void desenhar_structs(int highlight, ConfigItem *itens, int n_itens, char *titul
 
         if(highlight == i + 1) {
             attron(A_REVERSE);
-            if (itens[i].flagBotao) mvprintw(y, x, " %s ", itens[i].texto);
-            else mvprintw(y, x, "[%c] %s", marcador, itens[i].texto);
+            if (itens[i].flagBotao) 
+                mvprintw(y, x, " %s ", itens[i].texto);
+            else 
+                mvprintw(y, x, "[%c] %s", marcador, itens[i].texto);
             attroff(A_REVERSE);
         } else {
-            if (itens[i].flagBotao) mvprintw(y, x, " %s ", itens[i].texto);
-            else mvprintw(y, x, "[%c] %s", marcador, itens[i].texto);
+            if (itens[i].flagBotao) 
+                mvprintw(y, x, " %s ", itens[i].texto);
+            else 
+                mvprintw(y, x, "[%c] %s", marcador, itens[i].texto);
         }
     }
     refresh();
@@ -119,7 +128,8 @@ void menu_checkbox(ConfigItem *itens, int n_itens, char *titulo) {
                 break;
             case 32: // Espaço
             case 10: // Enter
-                if (itens[highlight-1].flagBotao) return;
+                if (itens[highlight-1].flagBotao) 
+                    return;
 
                 int idx = highlight - 1; 
                 itens[idx].ativo = !itens[idx].ativo; 
@@ -143,7 +153,8 @@ void menu_checkbox(ConfigItem *itens, int n_itens, char *titulo) {
                     }
                 }
                 break;
-            case KEY_F(10): return;
+            case KEY_F(10): 
+                return;
         }
         desenhar_structs(highlight, itens, n_itens, titulo);
     }
@@ -167,10 +178,11 @@ int menu_valor(char *mensagem) {
     curs_set(0);
 
    
-    if (strlen(input) == 0) return -1;
-    for (int i = 0; i < (int)strlen(input); i++) {
-        if (!isdigit(input[i])) return -1; // Se houver algo que não é número, retorna -1
-    }
+    if (strlen(input) == 0) 
+        return -1;
+    for (int i = 0; i < (int)strlen(input); i++) 
+        if (!isdigit(input[i])) 
+            return -1; // Se houver algo que não é número, retorna -1
 
     return atoi(input);
 }

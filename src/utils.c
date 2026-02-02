@@ -44,20 +44,18 @@ Instrucao* geradorMultiplo(int N_INST, int N_PROB, int N_FOR, int N_OPCODE, int 
     for (int i = 0; i < N_INST; i++) {
         int random_prob = (rand() % 100) + 1;
         if (random_prob <= N_PROB) {
-            int escolha = rand() % 3;
-            switch (escolha) {
-                case 0:
-                    programa[i] = padraoA[indiceA];
-                    indiceA = (indiceA + 1) % N_FOR;
-                    break;
-                case 1:
-                    programa[i] = padraoB[indiceB];
-                    indiceB = (indiceB + 1) % N_FOR;
-                    break;
-                case 2:
-                    programa[i] = padraoC[indiceC];
-                    indiceC = (indiceC + 1) % N_FOR;
-                    break;
+            int escolha = rand() % 100;
+            if (escolha < 33) {
+                programa[i] = padraoA[indiceA];
+                indiceA = (indiceA + 1) % N_FOR;
+            }
+            else if (escolha < 66) {
+                programa[i] = padraoB[indiceB];
+                indiceB = (indiceB + 1) % N_FOR;
+            }
+            else {
+                programa[i] = padraoC[indiceC];
+                indiceC = (indiceC + 1) % N_FOR;
             }
         }
         else {
@@ -137,7 +135,7 @@ void setupBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
 }
 
 void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
-    srand(RAND);
+    srand(42);
     Cache *L1 = criaCache(metrics->tamL1); Cache *L2 = criaCache(metrics->tamL2); Cache *L3 = criaCache(metrics->tamL3);
     LinhaCache *RAM = criaRAM_aleatoria(metrics->tamRAM);
  
@@ -152,12 +150,11 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     if (configs[ID_BUFFER].ativo) {
         buffer.fila = (ItemBuffer*) malloc(metrics->tamWriteBuffer * sizeof(ItemBuffer));
         buffer.inicio = 0;
-        buffer.qtdStalls = 0;
         buffer.fim = 0;
         buffer.qtdAtual = 0;
         buffer.tamMax = metrics->tamWriteBuffer;
         buffer.ultimoUso = 0;
-        buffer.custoPorStore = 600; 
+        buffer.custoPorStore = CUSTO_RAM; 
     } 
     else
         metrics->tamWriteBuffer = -1;
@@ -178,10 +175,7 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     metrics->hitsL2 = L2->hit; metrics->missesL2 = L2->miss;
     metrics->hitsL3 = L3->hit; metrics->missesL3 = L3->miss;
 
-    if (configs[ID_BUFFER].ativo) 
-        metrics->qtdStalls = buffer.qtdStalls;
-    else 
-        metrics->qtdStalls = 0;
+
 
     destroiCache(L1); destroiCache(L2); destroiCache(L3); 
     liberaRAM(RAM);

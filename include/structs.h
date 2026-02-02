@@ -17,7 +17,7 @@
 #define POL_RRIP 3
 
 #define TAM_RAM_DEFAULT 1000
-#define RAND 999999
+// #define RAND 999999
 
 #define ID_BUFFER 0
 #define ID_LIP 1
@@ -93,7 +93,6 @@ typedef struct {
     long int ultimoUso;
     int custoPorStore;
 
-    long qtdStalls;
 } WriteBuffer;
 
 

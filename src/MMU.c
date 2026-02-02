@@ -67,9 +67,9 @@ void salvaRAM(Cache* L3, int indice, LinhaCache *RAM, WriteBuffer *buffer, int C
 
 
 int buscarCache(Cache* c, int endRAM, long int relogioAtual, ConfigItem *configs) {
-    int indiceBloco = endRAM % c->nroConjuntos;
+    int idxConjunto = endRAM % c->nroConjuntos;
 
-    int inicioBloco = indiceBloco * 4;
+    int inicioBloco = idxConjunto * 4;
     for (int i = inicioBloco; i < inicioBloco + 4; i++) { // Caso encontre o endereços da ram na cache vai aumentar o número de hits
         if (c->memoria[i].preenchido && c->memoria[i].endBloco == endRAM) {
             c->hit++;
@@ -90,8 +90,8 @@ int buscarCache(Cache* c, int endRAM, long int relogioAtual, ConfigItem *configs
 }
 
 int buscaDadoAntigo(Cache* c, int endRAM, int policy) {
-    int posConjunto = endRAM % c->nroConjuntos;
-    int inicioBloco = posConjunto * 4;
+    int idxConjunto = endRAM % c->nroConjuntos;
+    int inicioBloco = idxConjunto * 4;
 
     // busca por linha vazia primeiro
     for (int i = inicioBloco; i < inicioBloco + 4; i++) 
@@ -137,17 +137,21 @@ int transfereCache(Cache *cacheOrigem, Cache *cacheDestino, int indiceOrigem, in
         int destinoParaOrigem = buscaDadoAntigo(cacheOrigem, dadoDesce.endBloco, getPolicy(configs));
 
         if (cacheInferior) {
-            int posL3 = buscaDadoAntigo(cacheInferior, dadoDesce.endBloco, getPolicy(configs));
-            salvaRAM(cacheInferior, posL3, RAM, buffer, configs[ID_BUFFER].ativo, relogio); 
+            LinhaCache vitimaL2 = cacheOrigem->memoria[destinoParaOrigem];
 
-            cacheInferior->memoria[posL3] = dadoDesce;
-            cacheInferior->memoria[posL3].prioridade = atribuiPrioridade(configs, relogio);
+            if (vitimaL2.preenchido) {
+                int posL3 = buscaDadoAntigo(cacheInferior, vitimaL2.endBloco, getPolicy(configs));
+                
+                salvaRAM(cacheInferior, posL3, RAM, buffer, configs[ID_BUFFER].ativo, relogio);
 
+                cacheInferior->memoria[posL3] = vitimaL2;
+                cacheInferior->memoria[posL3].prioridade = atribuiPrioridade(configs, relogio);
+                cacheInferior->memoria[posL3].preenchido = true;
+            }
         }
         else
             salvaRAM(cacheOrigem, destinoParaOrigem, RAM, buffer, configs[ID_BUFFER].ativo, relogio);
 
-        salvaRAM(cacheOrigem, destinoParaOrigem, RAM, buffer, configs[ID_BUFFER].ativo, relogio);
         cacheOrigem->memoria[destinoParaOrigem] = dadoDesce;
         cacheOrigem->memoria[destinoParaOrigem].prioridade = atribuiPrioridade(configs, relogio);
         cacheOrigem->memoria[destinoParaOrigem].preenchido = true;
@@ -164,7 +168,7 @@ int transfereCache(Cache *cacheOrigem, Cache *cacheDestino, int indiceOrigem, in
 
 
 void buffer_add(LinhaCache *RAM, WriteBuffer *wb, int endBloco, LinhaCache linha, long *relogio) {
-    // Calcula o tempo passado e os stores feitos
+    // Background
     long delta = *relogio - wb->ultimoUso;
     if (delta > 0) {
         long qtdStores = delta / wb->custoPorStore;
@@ -182,7 +186,7 @@ void buffer_add(LinhaCache *RAM, WriteBuffer *wb, int endBloco, LinhaCache linha
     if (wb->qtdAtual == 0)
         wb->ultimoUso = *relogio;
     
-    // Procura se ja existe no buffer e atualiza
+    // busca
     if (wb->qtdAtual > 0) {
         int i = wb->inicio;
         int count = 0;
@@ -195,7 +199,7 @@ void buffer_add(LinhaCache *RAM, WriteBuffer *wb, int endBloco, LinhaCache linha
             count++;
         }
     }
-    // Se o buffer ainda estiver cheio, stall até liberar espaço
+
     while (wb->qtdAtual >= wb->tamMax) {
         *relogio += wb->custoPorStore;
         wb->ultimoUso = *relogio;
@@ -205,7 +209,7 @@ void buffer_add(LinhaCache *RAM, WriteBuffer *wb, int endBloco, LinhaCache linha
 
         wb->qtdAtual--;
         wb->inicio = (wb->inicio + 1) % wb->tamMax;
-        wb->qtdStalls++;
+
     }
 
     // Add buffer
@@ -219,7 +223,6 @@ void buffer_add(LinhaCache *RAM, WriteBuffer *wb, int endBloco, LinhaCache linha
 void salvaRAM(Cache* L3, int indice, LinhaCache *RAM, WriteBuffer *buffer, int ConfigBuffer, long int *relogio) {
     if(!L3 || !RAM)
         return;
-    
     
     if(L3->memoria[indice].preenchido && L3->memoria[indice].alterado) {
         int endRAM = L3->memoria[indice].endBloco;
@@ -267,9 +270,7 @@ int carregaRAM(Cache* L3, int endRAM, LinhaCache *RAM, WriteBuffer *buffer, Conf
     if (configs[ID_BUFFER].ativo) // quando wrtitebuffer ativado vai buscar para ver se o endereco está no buffer
         achouBuffer = procuraBuffer(buffer, endRAM, &linhaNova);
     
-    if (achouBuffer)
-        *relogio += CUSTO_L1;
-    else {
+    if (!achouBuffer) {
         linhaNova = RAM[endRAM];
         *relogio += CUSTO_RAM;
     }
