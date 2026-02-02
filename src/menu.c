@@ -10,7 +10,7 @@
 #define COR_AMARELO 3
 #define COR_TITULO 4
 
-void menu_init() {
+void iniciar_menu() {
     initscr();
     noecho();
     cbreak();

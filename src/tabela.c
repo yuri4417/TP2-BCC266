@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ncurses.h> 
 #include <ctype.h>
+#include <string.h>
 
 #include "tabela.h"
 #include "utils.h"   
@@ -11,9 +12,10 @@
 //criando macros para evitar repetição
 #define H3  TAB_HOR TAB_HOR TAB_HOR 
 #define H6  TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR
+#define H8  TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR
 #define H12 TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR
 #define H20 TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR TAB_HOR
-
+#define QTD_TESTES 20
 //120 caracteres
 #define H120 H12 H12 H12 H12 H12 H12 H12 H12 H12 H12
 
@@ -21,6 +23,7 @@
 int selecionarProbabilidade();
 int selecionarNFor();
 void inicializarMetricas(BenchMetrics *m);
+ 
 
 void exibirInfoGeral(BenchMetrics *m, ConfigItem *configs) { // informações se a o writebuffer, lip estão ativos, numero de instruções, tamanho do for
     
@@ -36,12 +39,10 @@ void exibirInfoGeral(BenchMetrics *m, ConfigItem *configs) { // informações se
         printf(TAB_VER " %-18s%s%91s" TAB_VER "\n", "Write Buffer:", RED("DESATIVADO"), "");
     }
     
-    if (configs[ID_LIP].ativo) {
-        printf(TAB_VER " %-18s%s%94s" TAB_VER "\n", "Politica LIP:", GREEN("ATIVADO"), "");
-    } else {
-        printf(TAB_VER " %-18s%s%91s" TAB_VER "\n", "Politica LIP:", RED("DESATIVADO"), "");
-    }
-
+    if(configs[POL_RRIP].ativo)
+        printf(TAB_VER " Politica %s%-4s%s%94s" TAB_VER "\n", m->policy,":",  GREEN("ATIVADO"), "");
+    else    
+        printf(TAB_VER " Politica %s%-6s%s%94s" TAB_VER "\n", m->policy,":",  GREEN("ATIVADO"), "");
     printf(TAB_VER " %-18s%-3d %% %95s" TAB_VER "\n", "Prob. Repeticao:", m->N_PROB, "");
     printf(TAB_VER " %-18s%-10d%91s" TAB_VER "\n", "Instr. p/ Loop:", m->N_FOR, "");
     printf(TAB_BL H120 TAB_BR "\n\n");
@@ -115,7 +116,6 @@ void testePadrao(ConfigItem *configs) { // vai inicializar o tamanho das caches 
     totalizador.N_PROB = prob; 
     totalizador.N_FOR = nFor;
 
-
     for (int i = 0; i < 5; i++) {
         BenchMetrics *r = &resultados[i];
         inicializarMetricas(r);
@@ -130,11 +130,11 @@ void testePadrao(ConfigItem *configs) { // vai inicializar o tamanho das caches 
 
         CacheBenchmark(r, configs);
         totalizador.qtdStalls += r->qtdStalls;
+        strcpy(totalizador.policy, r->policy);
     }
 
     system("clear");
     printf("\n" BOLD(CYAN("Resultados:")) "\n");
-
     exibirInfoGeral(&totalizador, configs);
     cabecalho();
 
@@ -172,7 +172,7 @@ void salvaTabela(int *qtdSalva, BenchMetrics *tabelaSalva, BenchMetrics m ) //
                 (*qtdSalva)++;
                 printf(GREEN("Resultado salvo com sucesso! ID: M%d") "\n", (*qtdSalva));
             } else 
-                printf(RED("Memoria cheia! Nao e possivel salvar mais.") "\n");
+                printf(RED("Memoria cheia! Nao é possivel salvar mais.") "\n");
             
         printf("Pressione ENTER para continuar...");
         getchar();
@@ -251,31 +251,82 @@ void imprimirTabelaSalva(BenchMetrics *lista, int qtd) {
     setbuf(stdout, NULL);
     system("clear");
 
+    
     printf("\n" BOLD(MAGENTA("Tabela de resultados salvos")) "\n\n");
+
     if (qtd == 0) {
-        printf(RED("Nenhum resultado salvo.") "\n");
+        printf(RED("Nenhum resultado foi salvo ainda.") "\n");
     } else {
         for(int i =0; i<qtd; i++)
         {
             printf(BOLD("Probabilidade de repetição = %d %%  e tamanho do for = %d da M%-d\n"),lista[i].N_PROB, lista[i].N_FOR, i+1);
         }
-        cabecalho();
-        for (int i = 0; i < qtd; i++) {
-            imprimirLinha(i + 1, &lista[i]);
+        //linha p/ iniciar o  cabeçalho
+        printf(TAB_TL H3 TAB_TJ H8 TAB_TJ H6 TAB_TJ H6 TAB_TJ H6);        // M | Politica | Tamanhos
+        printf(TAB_TJ H12 TAB_TJ H12 TAB_TJ H12);     // L1
+        printf(TAB_TJ H12 TAB_TJ H12 TAB_TJ H12);     // L2
+        printf(TAB_TJ H12 TAB_TJ H12 TAB_TJ H12);     // L3
+        printf(TAB_TJ H12 TAB_TJ H20 TAB_TR "\n");
+        // Títulos das colunas
+        printf(TAB_VER " M " TAB_VER " Pol.   " TAB_VER "  L1  " TAB_VER "  L2  " TAB_VER "  L3  ");
+        printf(TAB_VER "    H.L1    " TAB_VER "   Hit L1%%  " TAB_VER "    M.L1    "),
+        printf(TAB_VER "    H.L2    " TAB_VER "   Hit L2%%  " TAB_VER "    M.L2    "),
+        printf(TAB_VER "    H.L3    " TAB_VER "   Hit L3%%  " TAB_VER "    M.L3    "),
+        printf(TAB_VER "    RAM%%    " TAB_VER "        TEMPO       " TAB_VER "\n");
 
+        // Linha p/ fechar cabeçalho
+        printf(TAB_ML H3 TAB_MJ H8 TAB_MJ H6 TAB_MJ H6 TAB_MJ H6);
+        printf(TAB_MJ H12 TAB_MJ H12 TAB_MJ H12);
+        printf(TAB_MJ H12 TAB_MJ H12 TAB_MJ H12);
+        printf(TAB_MJ H12 TAB_MJ H12 TAB_MJ H12);
+        printf(TAB_MJ H12 TAB_MJ H20 TAB_MR "\n");
+
+        /* imprimir linha com os resultados, não consegui reutilizar a função
+        imprimir linha pois adicione uma coluna de politica(onde mostra a politica de substituição usada), e
+        e só quero essa coluna nas tabelas salvas, para mostrar a política usada em cada uma
+        se quisesse reutilizá-la, as outras tabelas, padrão e individual teriam esse dado, o que seria desnecessário
+        */
+        for (int i = 0; i < qtd; i++) {
+            BenchMetrics *m = &lista[i];
+            // necessário recalcular a porcentagem
+            long int  totalAcessos = m->hitsL1 + m->missesL1;
+            float pL1 = totalAcessos ? (float)m->hitsL1 * 100.0 / totalAcessos : 0.0;
+            
+            long int tL2 = m->hitsL2 + m->missesL2;
+            float pL2 = tL2 ? (float)m->hitsL2 * 100.0 / totalAcessos : 0.0;
+            
+            long int tL3 = m->hitsL3 + m->missesL3;
+            float pL3 = tL3 ? (float)m->hitsL3 * 100.0 / totalAcessos : 0.0;
+            
+            float taxaRAM = totalAcessos ? ((float)m->missesL3 / totalAcessos) * 100.0 : 0.0;
+
+            // agora com a Politica de substituição (m->policy)
+            printf(TAB_VER " M%-d" TAB_VER " %-7s" TAB_VER " %-4d " TAB_VER " %-4d " TAB_VER " %-4d ",i + 1, m->policy,m->tamL1, m->tamL2, m->tamL3);
+            printf(TAB_VER " %10d " TAB_VER " %9.1f%% " TAB_VER " %10d " ,m->hitsL1, pL1, m->missesL1);
+            printf(TAB_VER " %10d " TAB_VER " %9.1f%% " TAB_VER " %10d ",m->hitsL2, pL2, m->missesL2);
+            printf(TAB_VER " %10d " TAB_VER " %9.1f%% " TAB_VER " %10d ",m->hitsL3, pL3, m->missesL3);
+            printf(TAB_VER " %9.1f%% " TAB_VER " %18ld " TAB_VER "\n",taxaRAM, m->relogio);
+                   
+
+            // Linha separadora entre itens, menos o último por isso -1
             if (i < qtd - 1) {
-               printf(TAB_ML H3 TAB_MJ H6 TAB_MJ H6 TAB_MJ H6);
+               printf(TAB_ML H3 TAB_MJ H8 TAB_MJ H6 TAB_MJ H6 TAB_MJ H6); 
                printf(TAB_MJ H12 TAB_MJ H12 TAB_MJ H12);
                printf(TAB_MJ H12 TAB_MJ H12 TAB_MJ H12);
                printf(TAB_MJ H12 TAB_MJ H12 TAB_MJ H12);
                printf(TAB_MJ H12 TAB_MJ H20 TAB_MR "\n");
             }
         }
-        rodape();
+        
+        // linha p/ fechar a tabela
+        printf(TAB_BL H3 TAB_BJ H8 TAB_BJ H6 TAB_BJ H6 TAB_BJ H6);
+        printf(TAB_BJ H12 TAB_BJ H12 TAB_BJ H12);
+        printf(TAB_BJ H12 TAB_BJ H12 TAB_BJ H12);
+        printf(TAB_BJ H12 TAB_BJ H12 TAB_BJ H12);
+        printf(TAB_BJ H12 TAB_BJ H20 TAB_BR "\n");
     }
 
     printf("\n" GREEN("Pressione ENTER para voltar ao menu...") "\n");
-    
     getchar();
     refresh();
 }

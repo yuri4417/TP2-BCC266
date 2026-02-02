@@ -342,3 +342,4 @@ void MMU_Write(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, WriteBuffer *bu
         exit(-1);
 }
 
+

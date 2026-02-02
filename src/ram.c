@@ -27,3 +27,4 @@ void liberaRAM(LinhaCache* ram) {
     if (ram)
         free(ram);
 }
+

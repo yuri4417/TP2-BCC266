@@ -4,6 +4,7 @@
 
 #include "MMU.h"
 
+
 void cpu(Cache *L1, Cache *L2, Cache *L3, LinhaCache *RAM, Instrucao *programa, long int *relogio, WriteBuffer *buffer, ConfigItem *configs) {
     LinhaCache reg1, reg2, reg3;
     int PC = 0; 

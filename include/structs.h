@@ -16,7 +16,7 @@
 #define POL_LFU 2
 #define POL_RRIP 3
 
-#define TAM_RAM_DEFAULT 1200
+#define TAM_RAM_DEFAULT 1000
 #define RAND 999999
 
 #define ID_BUFFER 0

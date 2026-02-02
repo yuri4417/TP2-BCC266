@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "structs.h"
 #include "MMU.h"
+#include "cores.h"
 
 Instrucao* criarPadrao(int N_FOR, int N_OPCODE, int INICIO_RAM, int rangeMemoria, int N_WORD) {
     Instrucao* ptr = (Instrucao*) malloc(N_FOR * sizeof(Instrucao));
@@ -60,7 +61,7 @@ Instrucao* geradorMultiplo(int N_INST, int N_PROB, int N_FOR, int N_OPCODE, int 
             }
         }
         else {
-            int endAleatorios = 1000;
+            int endAleatorios = 800;
             programa[i].opcode = rand() % N_OPCODE;
             
             programa[i].add1.endBloco = endAleatorios + (rand() % 200);
@@ -166,7 +167,7 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     else if (configs[ID_LFU].ativo)
         strcpy(metrics->policy, "LFU");
     else if (configs[ID_RRIP].ativo)
-        strcpy(metrics->policy, "RRIP");
+        strcpy(metrics->policy, "SRRIP");
     else
         strcpy(metrics->policy, "LRU");
 
@@ -188,4 +189,58 @@ void CacheBenchmark(BenchMetrics *metrics, ConfigItem *configs) {
     if (configs[ID_BUFFER].ativo)
         free(buffer.fila);
 }
+
+/*
+void testeRapido(ConfigItem *configs) {
+    BenchMetrics m;
+    
+    menu_close(); 
+
+
+    m.tamL1 = 32; 
+    m.tamL2 = 64;
+    m.tamL3 = 256;
+    m.tamRAM = TAM_RAM_DEFAULT;
+    
+    m.N_PROB = 90;    
+    m.N_FOR = 5;  
+    m.tamWriteBuffer = 4;
+
+    configs[ID_MULT].ativo = 1; 
+
+    printf("\n" BOLD(CYAN("=== Comparacão de Políticas  (L1=%d, MULTI=ON) ===")) "\n", m.tamL1);
+
+    configs[ID_LIP].ativo = 0; 
+    configs[ID_LFU].ativo = 0; 
+    configs[ID_RRIP].ativo = 0;
+    
+    CacheBenchmark(&m, configs);
+    printf("LRU  -> Hit L1: %5.1f%% (Tempo: %ld)\n", (float)m.hitsL1*100/(m.hitsL1+m.missesL1), m.relogio);
+
+    configs[ID_LIP].ativo = 1; 
+    configs[ID_LFU].ativo = 0; 
+    configs[ID_RRIP].ativo = 0;
+    
+    CacheBenchmark(&m, configs);
+    printf("LIP  -> Hit L1: %5.1f%% (Tempo: %ld)\n", (float)m.hitsL1*100/(m.hitsL1+m.missesL1), m.relogio);
+
+    configs[ID_LIP].ativo = 0; 
+    configs[ID_LFU].ativo = 1; 
+    configs[ID_RRIP].ativo = 0;
+    
+    CacheBenchmark(&m, configs);
+    printf("LFU  -> Hit L1: %5.1f%% (Tempo: %ld)\n", (float)m.hitsL1*100/(m.hitsL1+m.missesL1), m.relogio);
+
+    configs[ID_LIP].ativo = 0; 
+    configs[ID_LFU].ativo = 0; 
+    configs[ID_RRIP].ativo = 1;
+    
+    CacheBenchmark(&m, configs);
+    printf("RRIP -> Hit L1: %5.1f%% (Tempo: %ld)\n", (float)m.hitsL1*100/(m.hitsL1+m.missesL1), m.relogio);
+    
+    printf("\n" GREEN("Pressione ENTER para retornar ao menu...") "\n");
+    getchar();
+    iniciar_menu(); 
+}
+*/
 
